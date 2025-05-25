@@ -107,3 +107,37 @@
   border-radius: 4px;
   cursor: pointer;
 }
+
+@media (max-width: 600px) {
+  .modalContent {
+    min-width: unset;
+    width: 95vw;
+    max-width: 98vw;
+    padding: 1rem;
+    border-radius: 6px;
+    font-size: 0.97rem;
+  }
+
+  .costBreakdown,
+  .conditionsGroup {
+    padding: 0.7rem;
+    font-size: 0.95rem;
+  }
+
+  .buttonGroup {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .confirmButton,
+  .cancelButton {
+    width: 100%;
+    font-size: 1rem;
+    padding: 0.7rem 0;
+  }
+
+  .formGroup input {
+    font-size: 1rem;
+    padding: 0.4rem;
+  }
+}

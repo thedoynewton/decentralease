@@ -1,9 +1,10 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { supabase } from "../../../../supabase/supabase-client";
+import { useAccount } from "wagmi";
 import Layout from "../../../../components/Layout";
 import styles from "../../../styles/ListingDetails.module.css";
 import stylesModal from "../../../styles/BookingModal.module.css";
+import { supabase } from "../../../../supabase/supabase-client";
 
 function timeAgo(dateString: string) {
   const now = new Date();
@@ -20,7 +21,10 @@ function timeAgo(dateString: string) {
 
 export default function ListingDetail() {
   const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const { id } = router.query;
+  const { address, isConnected } = useAccount();
   const [listing, setListing] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [pickupDate, setPickupDate] = useState("");
@@ -29,6 +33,19 @@ export default function ListingDetail() {
   const [agreeToConditions, setAgreeToConditions] = useState(false);
   const [conditionsModalOpen, setConditionsModalOpen] = useState(false);
   const PLATFORM_FEE = 0.05;
+
+  useEffect(() => {
+    if (!address) return;
+    const fetchUser = async () => {
+      const { data } = await supabase
+        .from("users_duplicate")
+        .select("id,name,phone,location")
+        .eq("wallet_address", address)
+        .single();
+      setUser(data);
+    };
+    fetchUser();
+  }, [address]);
 
   useEffect(() => {
     if (!id) return;
@@ -57,18 +74,61 @@ export default function ListingDetail() {
     }
   }, [pickupDate, returnDate, listing]);
 
-  const handleBooking = () => {
-    console.log({
-      listingId: id,
-      pickupDate,
-      returnDate,
-      totalAmount,
-    });
-    setModalOpen(false);
-    // Add your booking logic here
-  };
+  // Function to insert booking
+  const handleBooking = async () => {
+    const days = Math.max(
+      1,
+      Math.ceil(
+        (new Date(returnDate).getTime() - new Date(pickupDate).getTime()) /
+          (1000 * 60 * 60 * 24)
+      )
+    );
+    const rentalFee = (Number(listing.rental_fee) * days).toString();
+    const securityDeposit = (Number(listing.security_deposit) || 0).toString();
+    const totalAmount = (
+      Number(rentalFee) +
+      Number(securityDeposit) +
+      PLATFORM_FEE
+    ).toString();
 
-  const today = new Date().toISOString().split("T")[0];
+    // Check for duplicate booking
+    const { data: existing, error: checkError } = await supabase
+      .from("bookings_duplicate")
+      .select("id")
+      .eq("listing_id", listing.id)
+      .eq("lessee_id", user?.id)
+      .eq("pickup_date", pickupDate)
+      .eq("return_date", returnDate);
+
+    if (checkError) {
+      alert("Error checking for existing bookings.");
+      return checkError;
+    }
+    if (existing && existing.length > 0) {
+      alert("You have already booked this listing for these dates.");
+      return { message: "Duplicate booking" };
+    }
+
+    const { error } = await supabase.from("bookings_duplicate").insert([
+      {
+        listing_id: listing.id,
+        lessee_name: user?.name || "",
+        lessee_phone: user?.phone || "",
+        lessee_location: user?.location || "",
+        pickup_date: pickupDate,
+        return_date: returnDate,
+        rental_fee: rentalFee,
+        security_deposit: securityDeposit,
+        platform_fee: PLATFORM_FEE.toString(),
+        total_amount: totalAmount,
+        listing_title: listing.title,
+        category: String(listing.category_id),
+        subcategory: String(listing.subcategory_id),
+        lessee_id: user?.id,
+      },
+    ]);
+    return error;
+  };
 
   if (!listing) {
     return (
@@ -116,9 +176,15 @@ export default function ListingDetail() {
           </div>
           <button
             className={styles.bookNowButton}
-            onClick={() => setModalOpen(true)}
+            onClick={() => {
+              if (!isConnected) {
+                alert("Please connect your wallet first");
+                return;
+              }
+              setModalOpen(true);
+            }}
           >
-            Book Now
+            {isConnected ? "Book Now" : "Connect Wallet to Book"}
           </button>
         </div>
         {modalOpen && (
@@ -186,10 +252,15 @@ export default function ListingDetail() {
               <div className={stylesModal.buttonGroup}>
                 <button
                   className={stylesModal.confirmButton}
-                  onClick={handleBooking}
-                  disabled={!pickupDate || !returnDate || !agreeToConditions}
+                  onClick={() => setShowConfirmation(true)}
+                  disabled={
+                    !pickupDate ||
+                    !returnDate ||
+                    !agreeToConditions ||
+                    !isConnected
+                  }
                 >
-                  Confirm Booking
+                  {isConnected ? "Confirm Booking" : "Connect Wallet"}
                 </button>
                 <button
                   className={stylesModal.cancelButton}
@@ -216,6 +287,38 @@ export default function ListingDetail() {
                   onClick={() => setConditionsModalOpen(false)}
                 >
                   Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showConfirmation && (
+          <div className={stylesModal.modalOverlay}>
+            <div className={stylesModal.modalContent}>
+              <h2>Confirm Booking</h2>
+              <p style={{ margin: "1rem 0" }}>
+                Are you sure you want to book <b>{listing.title}</b> from{" "}
+                <b>{pickupDate}</b> to <b>{returnDate}</b> for a total of{" "}
+                <b>{totalAmount.toFixed(3)} ETH</b>?
+              </p>
+              <div className={stylesModal.buttonGroup}>
+                <button
+                  className={stylesModal.confirmButton}
+                  onClick={async () => {
+                    setShowConfirmation(false);
+                    alert("Booking confirmed!");
+                    const error = await handleBooking();
+                    if (!error) setModalOpen(false);
+                  }}
+                >
+                  Yes, Book Asset
+                </button>
+                <button
+                  className={stylesModal.cancelButton}
+                  onClick={() => setShowConfirmation(false)}
+                >
+                  No, Cancel
                 </button>
               </div>
             </div>
