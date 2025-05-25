@@ -1,0 +1,131 @@
+.container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 32px;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  background: #fafbfc;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.title {
+  margin-bottom: 8px;
+  color: #2d3748;
+  font-size: 2rem;
+  text-align: center;
+}
+
+.subtitle {
+  color: #4a5568;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.address {
+  font-weight: 600;
+}
+
+.disconnectButton {
+  margin-bottom: 24px;
+  padding: 8px 16px;
+  background: #e53e3e;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.disconnectButton:hover,
+.disconnectButton:focus {
+  background: #c53030;
+}
+
+.status {
+  margin-bottom: 16px;
+  color: #e53e3e;
+  font-weight: 500;
+  text-align: center;
+}
+
+.buttonRow {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 32px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.actionButton {
+  padding: 12px 24px;
+  background: #3182ce;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.actionButton:hover,
+.actionButton:focus {
+  background: #2563eb;
+}
+
+.actionButtonGreen {
+  padding: 12px 24px;
+  background: #38a169;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.actionButtonGreen:hover,
+.actionButtonGreen:focus {
+  background: #2f855a;
+}
+
+.infoBox {
+  background: #edf2f7;
+  padding: 16px;
+  border-radius: 8px;
+  color: #2d3748;
+  font-size: 16px;
+  margin-top: 8px;
+}
+
+.infoBox ul {
+  margin-top: 12px;
+  padding-left: 20px;
+}
+
+@media (max-width: 600px) {
+  .container {
+    max-width: 100%;
+    margin: 16px;
+    padding: 12px;
+  }
+  .title {
+    font-size: 1.2rem;
+    margin-bottom: 12px;
+  }
+  .buttonRow {
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .actionButton,
+  .actionButtonGreen {
+    width: 100%;
+    font-size: 1rem;
+    padding: 10px 0;
+  }
+  .infoBox {
+    font-size: 0.95rem;
+    padding: 10px;
+  }
+}

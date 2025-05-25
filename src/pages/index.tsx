@@ -1,10 +1,12 @@
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import type { NextPage } from 'next';
-import Head from 'next/head';
-import styles from '../styles/Home.module.css';
-import { SignMessage } from '../../components/SignMessage';
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+import type { NextPage } from "next";
+import Head from "next/head";
+import styles from "../styles/Home.module.css";
+import { SignMessage } from "../../components/SignMessage";
+import { useAccount } from "wagmi";
 
 const Home: NextPage = () => {
+  const { address } = useAccount();
   return (
     <div className={styles.container}>
       <Head>
@@ -15,15 +17,26 @@ const Home: NextPage = () => {
         <link rel="icon" href="/icons/favicon.ico" />
         <link rel="apple-touch-icon" href="/icons/apple-icon.png" />
         <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" type="image/png" sizes="192x192" href="/icons/web-app-manifest-192x192.png" />
-        <link rel="icon" type="image/png" sizes="512x512" href="/icons/web-app-manifest-512x512.png" />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="192x192"
+          href="/icons/web-app-manifest-192x192.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="512x512"
+          href="/icons/web-app-manifest-512x512.png"
+        />
       </Head>
 
       <main className={styles.main}>
         <ConnectButton />
-        <SignMessage />
+        {address && <SignMessage />}
         <h1 className={styles.title}>
-          Welcome to <a href="https://decentralease.vercel.app/">Decentralease</a>
+          Welcome to{" "}
+          <a href="https://decentralease.vercel.app/">Decentralease</a>
         </h1>
       </main>
 

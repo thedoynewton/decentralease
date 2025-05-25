@@ -1,0 +1,90 @@
+.container {
+  max-width: 400px;
+  margin: 40px auto;
+  padding: 24px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.title {
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 1.6rem;
+  color: #2d3748;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 8px;
+}
+
+.inputGroup label {
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: #4a5568;
+}
+
+.input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border 0.2s;
+}
+
+.input:focus {
+  border-color: #3182ce;
+  outline: none;
+}
+
+.button {
+  padding: 10px 0;
+  background: #3182ce;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.2s;
+}
+
+.button:hover,
+.button:focus {
+  background: #2563eb;
+}
+
+.status {
+  margin-top: 16px;
+  text-align: center;
+  color: #3182ce;
+  font-weight: 500;
+}
+
+@media (max-width: 600px) {
+  .container {
+    max-width: 100%;
+    margin: 16px;
+    padding: 12px;
+  }
+  .title {
+    font-size: 1.2rem;
+    margin-bottom: 16px;
+  }
+  .button {
+    font-size: 0.95rem;
+    padding: 8px 0;
+  }
+}

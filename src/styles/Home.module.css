@@ -1,5 +1,7 @@
 .container {
   padding: 0 2rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .main {
@@ -10,6 +12,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  width: 100%;
 }
 
 .footer {
@@ -19,6 +22,8 @@
   border-top: 1px solid #eaeaea;
   justify-content: center;
   align-items: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .footer a {
@@ -62,6 +67,7 @@
   justify-content: center;
   flex-wrap: wrap;
   max-width: 800px;
+  width: 100%;
 }
 
 .card {
@@ -74,6 +80,8 @@
   border-radius: 10px;
   transition: color 0.15s ease, border-color 0.15s ease;
   max-width: 350px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .card:hover,
@@ -95,8 +103,33 @@
 }
 
 @media (max-width: 600px) {
+  .container {
+    padding: 0 0.5rem;
+  }
+  .main {
+    padding: 2rem 0 1rem 0;
+  }
+  .title {
+    font-size: 1.6rem;
+    margin: 2rem 0 1rem 0;
+  }
+  .description {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
   .grid {
     width: 100%;
     flex-direction: column;
+    padding: 0;
+  }
+  .card {
+    margin: 0.5rem 0;
+    padding: 1rem;
+    max-width: 100%;
+    font-size: 1rem;
+  }
+  .footer {
+    padding: 1rem 0;
+    font-size: 0.9rem;
   }
 }
