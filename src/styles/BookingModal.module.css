@@ -1,3 +1,37 @@
+.conditionsGroup {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: #f7f7f7;
+  border-radius: 4px;
+}
+
+.conditions {
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #666;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  cursor: pointer;
+}
+
+.checkbox input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.confirmButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .modalOverlay {
   position: fixed;
   top: 0;

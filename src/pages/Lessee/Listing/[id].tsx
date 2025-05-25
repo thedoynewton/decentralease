@@ -26,6 +26,8 @@ export default function ListingDetail() {
   const [pickupDate, setPickupDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
   const [totalAmount, setTotalAmount] = useState(0);
+  const [agreeToConditions, setAgreeToConditions] = useState(false);
+  const [conditionsModalOpen, setConditionsModalOpen] = useState(false);
   const PLATFORM_FEE = 0.05;
 
   useEffect(() => {
@@ -159,11 +161,33 @@ export default function ListingDetail() {
                   </p>
                 </div>
               )}
+
+              <div className={stylesModal.conditionsGroup}>
+                <label className={stylesModal.checkbox}>
+                  <input
+                    type="checkbox"
+                    checked={agreeToConditions}
+                    onChange={(e) => setAgreeToConditions(e.target.checked)}
+                  />
+                  I agree to the{" "}
+                  <a
+                    href="#"
+                    style={{ color: "#3182ce", textDecoration: "underline" }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setConditionsModalOpen(true);
+                    }}
+                  >
+                    rental conditions
+                  </a>
+                </label>
+              </div>
+
               <div className={stylesModal.buttonGroup}>
                 <button
                   className={stylesModal.confirmButton}
                   onClick={handleBooking}
-                  disabled={!pickupDate || !returnDate}
+                  disabled={!pickupDate || !returnDate || !agreeToConditions}
                 >
                   Confirm Booking
                 </button>
@@ -172,6 +196,26 @@ export default function ListingDetail() {
                   onClick={() => setModalOpen(false)}
                 >
                   Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {conditionsModalOpen && (
+          <div className={stylesModal.modalOverlay}>
+            <div
+              className={`${stylesModal.modalContent} ${stylesModal.conditionsModal}`}
+            >
+              <h2>Rental Conditions</h2>
+              <div className={stylesModal.conditionsContent}>
+                {listing.conditions}
+              </div>
+              <div className={stylesModal.buttonGroup}>
+                <button
+                  className={stylesModal.confirmButton}
+                  onClick={() => setConditionsModalOpen(false)}
+                >
+                  Close
                 </button>
               </div>
             </div>
