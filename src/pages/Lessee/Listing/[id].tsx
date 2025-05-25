@@ -24,6 +24,8 @@ export default function ListingDetail() {
   const { id } = router.query;
   const [listing, setListing] = useState<any>(null);
   const [carouselPage, setCarouselPage] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -33,6 +35,8 @@ export default function ListingDetail() {
   const [total, setTotal] = useState<number | null>(null);
   const [user, setUser] = useState<any>(null);
   const [showConditionsModal, setShowConditionsModal] = useState(false);
+  // if fixed
+  const platformFee = 0.05;
 
   useEffect(() => {
     if (!address) return;
@@ -50,19 +54,34 @@ export default function ListingDetail() {
   useEffect(() => {
     if (!id) return;
     const fetchListing = async () => {
+      setLoading(true);
       const { data, error } = await supabase
         .from("listings")
         .select("*")
         .eq("id", id)
         .single();
       if (!error && data) setListing(data);
+      setLoading(false);
     };
     fetchListing();
   }, [id]);
 
   // Function to insert booking
   const handleBooking = async () => {
-    const platformFee = 0.05;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to midnight for accurate comparison
+    const pickup = new Date(pickupDate);
+    const returnD = new Date(returnDate);
+
+    if (pickup < today || returnD < today) {
+      alert("Booking dates must be in the future.");
+      return;
+    }
+
+    if (pickup >= returnD) {
+      alert("Return date must be after pickup date.");
+      return;
+    }
     const days = Math.max(
       1,
       Math.ceil(
@@ -72,26 +91,30 @@ export default function ListingDetail() {
     );
     const rentalFee = (Number(listing.rental_fee) * days).toString();
     const securityDeposit = (Number(listing.security_deposit) || 0).toString();
-    const totalAmount = (Number(rentalFee) + Number(securityDeposit) + platformFee).toString();
+    const totalAmount = (
+      Number(rentalFee) +
+      Number(securityDeposit) +
+      platformFee
+    ).toString();
 
     // Check for duplicate booking
-  const { data: existing, error: checkError } = await supabase
-    .from("bookings_duplicate")
-    .select("id")
-    .eq("listing_id", listing.id)
-    .eq("lessee_id", user?.id)
-    .eq("pickup_date", pickupDate)
-    .eq("return_date", returnDate);
+    const { data: existing, error: checkError } = await supabase
+      .from("bookings_duplicate")
+      .select("id")
+      .eq("listing_id", listing.id)
+      .eq("lessee_id", user?.id)
+      .eq("pickup_date", pickupDate)
+      .eq("return_date", returnDate);
 
-  if (checkError) {
-    alert("Error checking for existing bookings.");
-    return checkError;
-  }
-  if (existing && existing.length > 0) {
-    alert("You have already booked this listing for these dates.");
-    return { message: "Duplicate booking" };
-  }
-  
+    if (checkError) {
+      alert("Error checking for existing bookings.");
+      return checkError;
+    }
+    if (existing && existing.length > 0) {
+      alert("You have already booked this listing for these dates.");
+      return { message: "Duplicate booking" };
+    }
+
     const { error } = await supabase.from("bookings_duplicate").insert([
       {
         listing_id: listing.id,
@@ -113,6 +136,21 @@ export default function ListingDetail() {
     return error;
   };
 
+  const confirmBookingHandler = async () => {
+    const error = await handleBooking();
+    if (error) {
+      alert("Booking failed: " + error.message);
+    } else {
+      setShowModal(false);
+      setShowConfirmModal(false);
+      setPickupDate("");
+      setReturnDate("");
+      setAgree(false);
+      setTotal(null);
+      alert("Booking confirmed!");
+    }
+  };
+
   useEffect(() => {
     if (pickupDate && returnDate && listing) {
       const start = new Date(pickupDate);
@@ -123,18 +161,19 @@ export default function ListingDetail() {
       );
       const rentalFee = Number(listing.rental_fee) * days;
       const securityDeposit = Number(listing.security_deposit) || 0;
-      const platformFee = 0.05;
+
       setTotal(rentalFee + securityDeposit + platformFee);
     } else {
       setTotal(null);
     }
   }, [pickupDate, returnDate, listing]);
 
-  if (!listing) {
+  if (loading) {
     return (
       <Layout>
         <div className={styles.container}>
-          <div className={styles.status}>Loading...</div>
+          <div className={styles.status}>Loading...</div>{" "}
+          {/* Replace with spinner if needed */}
         </div>
       </Layout>
     );
@@ -299,11 +338,11 @@ export default function ListingDetail() {
                 checked={agree}
                 onChange={(e) => setAgree(e.target.checked)}
               />
-              I agree to the {" "}
+              I agree to the{" "}
               <a
                 href="#"
                 style={{ color: "#3182ce", textDecoration: "underline" }}
-                onClick={e => {
+                onClick={(e) => {
                   e.preventDefault();
                   setShowConditionsModal(true);
                 }}
@@ -314,31 +353,18 @@ export default function ListingDetail() {
             <div className={styles.modalActions}>
               <button
                 className={styles.actionButton}
-                disabled={!pickupDate || !returnDate}
-                onClick={async () => {
+                disabled={!pickupDate || !returnDate || !agree}
+                onClick={() => {
                   if (!agree) {
                     alert("Agree to the rental conditions first");
                     return;
                   }
-                  const confirmBooking = window.confirm(
-                    "Do you really want to book this asset?"
-                  );
-                  if (!confirmBooking) return;
-                  const error = await handleBooking();
-                  if (error) {
-                    alert("Booking failed: " + error.message);
-                  } else {
-                    setShowModal(false);
-                    setPickupDate("");
-                    setReturnDate("");
-                    setAgree(false);
-                    setTotal(null);
-                    alert("Booking confirmed!");
-                  }
+                  setShowConfirmModal(true);
                 }}
               >
                 Confirm
               </button>
+
               <button
                 className={styles.actionButtonGreen}
                 style={{ background: "#e53e3e", marginLeft: 12 }}
@@ -380,6 +406,33 @@ export default function ListingDetail() {
                 style={{ minWidth: 100, marginTop: 16 }}
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showConfirmModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <h3>Confirm Booking</h3>
+            <p>
+              Are you sure you want to book this asset from <b>{pickupDate}</b>{" "}
+              to <b>{returnDate}</b> for <b>{total} ETH</b>?
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.actionButton}
+                onClick={confirmBookingHandler}
+              >
+                Yes, Confirm
+              </button>
+              <button
+                className={styles.actionButtonGreen}
+                style={{ background: "#e53e3e", marginLeft: 12 }}
+                onClick={() => setShowConfirmModal(false)}
+              >
+                Cancel
               </button>
             </div>
           </div>

@@ -58,17 +58,22 @@
 }
 
 .actionButton {
-  padding: 12px 24px;
-  background: #3182ce;
-  color: #fff;
+  background-color: #3182ce;
+  color: white;
+  padding: 10px 20px;
   border: none;
-  border-radius: 6px;
-  font-weight: 600;
+  border-radius: 8px;
+  font-weight: bold;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background-color 0.3s, opacity 0.3s;
 }
 
-.actionButton:hover,
+.actionButton:disabled {
+  background-color: #a0aec0; /* faded gray-blue */
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .actionButton:focus {
   background: #2563eb;
 }
