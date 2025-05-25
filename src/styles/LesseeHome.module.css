@@ -162,6 +162,197 @@
   grid-column: 1/-1;
 }
 
+.listingDescription {
+  margin-top: 10px;
+  color: #4a5568;
+  font-size: 1rem;
+}
+.listingConditions {
+  margin-top: 8px;
+  color: #805ad5;
+  font-size: 0.98rem;
+}
+
+.detailHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 0;
+  position: relative;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #3182ce;
+  cursor: pointer;
+  margin-right: 8px;
+  margin-top: 8px;
+  z-index: 2;
+  padding: 0 8px;
+  transition: color 0.2s;
+}
+.backButton:hover,
+.backButton:focus {
+  color: #2563eb;
+}
+
+.headerImageWrap {
+  flex: 1;
+  overflow: hidden;
+  border-radius: 0 0 16px 16px;
+  min-height: 120px;
+  max-height: 180px;
+  display: flex;
+  align-items: flex-end;
+  background: #f3f3f3;
+}
+.headerImage {
+  width: 100%;
+  object-fit: cover;
+  max-height: 180px;
+  border-radius: 0 0 16px 16px;
+}
+
+.detailContent {
+  padding: 16px 0 0 0;
+}
+
+.detailTitleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 18px;
+  gap: 12px;
+}
+
+.carousel {
+  margin-top: 10px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  padding: 20px 12px 32px 12px;
+  min-height: 120px;
+  position: relative;
+}
+
+.carouselInner {
+  min-height: 80px;
+}
+
+.carouselDots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.dot,
+.dotActive {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  display: inline-block;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.dotActive {
+  background: #3182ce;
+}
+
+.carouselNav {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.carouselBtn {
+  background: #f3f3f3;
+  border: none;
+  font-size: 1.5rem;
+  color: #3182ce;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background 0.2s, color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.carouselBtn:disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
+.carouselBtn:not(:disabled):hover {
+  background: #e6f0fa;
+  color: #2563eb;
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.25);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 28px 20px 20px 20px;
+  min-width: 300px;
+  max-width: 90vw;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modalLabel {
+  font-weight: 500;
+  margin-bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.modalInput {
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.modalTotal {
+  margin: 10px 0 0 0;
+  font-size: 1.1rem;
+  color: #3182ce;
+}
+
+.modalCheckboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  margin-top: 8px;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 @media (max-width: 600px) {
   .container {
     max-width: 100%;
@@ -193,5 +384,23 @@
   }
   .listingImage {
     height: 120px;
+  }
+
+  .detailHeader {
+    gap: 6px;
+  }
+  .headerImageWrap {
+    min-height: 80px;
+    max-height: 120px;
+  }
+  .headerImage {
+    max-height: 120px;
+  }
+  .carousel {
+    padding: 14px 4px 28px 4px;
+  }
+    .modal {
+    min-width: 90vw;
+    padding: 18px 6px 14px 6px;
   }
 }

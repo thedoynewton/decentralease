@@ -4,9 +4,34 @@ import Head from "next/head";
 import styles from "../styles/Home.module.css";
 import { SignMessage } from "../../components/SignMessage";
 import { useAccount } from "wagmi";
+import { useRouter } from "next/router";
+import { useEffect } from "react";
+import { supabase } from "../../supabase/supabase-client";
 
 const Home: NextPage = () => {
   const { address } = useAccount();
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      if (!address) return;
+      const { data, error } = await supabase
+        .from("users_duplicate")
+        .select("is_signed_in, is_lessor")
+        .eq("wallet_address", address)
+        .single();
+
+      if (data?.is_signed_in) {
+        if (data.is_lessor) {
+          router.replace("/Lessor/Home");
+        } else {
+          router.replace("/Lessee/Home");
+        }
+      }
+    };
+    checkUser();
+  }, [address, router]);
+
   return (
     <div className={styles.container}>
       <Head>

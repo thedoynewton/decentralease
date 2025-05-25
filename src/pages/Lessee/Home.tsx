@@ -4,6 +4,7 @@ import { supabase } from "../../../supabase/supabase-client";
 import { useState, useEffect, useRef } from "react";
 import styles from "../../styles/LesseeHome.module.css";
 import Layout from "../../../components/Layout";
+import Link from "next/link";
 
 // Helper to format time ago
 function timeAgo(dateString: string) {
@@ -23,9 +24,6 @@ function timeAgo(dateString: string) {
 const PAGE_SIZE = 6;
 
 export default function Home() {
-  const { address } = useAccount();
-  const { disconnect } = useDisconnect();
-  const [status, setStatus] = useState<string | null>(null);
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -34,37 +32,40 @@ export default function Home() {
   const router = useRouter();
 
   // Fetch listings with pagination
-  const fetchListings = async (pageNum: number) => {
-    setLoading(true);
-    const from = (pageNum - 1) * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-    const { data, error } = await supabase
-      .from("listings")
-      .select("id,created_at,title,rental_fee,image_url")
-      .order("created_at", { ascending: false })
-      .range(from, to);
+const fetchListings = async (pageNum: number) => {
+  setLoading(true);
+  const from = (pageNum - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+  const { data, error } = await supabase
+    .from("listings")
+    .select("id,created_at,title,rental_fee,image_url")
+    .order("created_at", { ascending: false })
+    .range(from, to);
 
-    if (!error && data) {
-      setListings(prev => [...prev, ...data]);
-      setHasMore(data.length === PAGE_SIZE);
-    } else {
-      setHasMore(false);
-    }
-    setLoading(false);
-  };
+  if (!error && data) {
+    setListings((prev) => pageNum === 1 ? data : [...prev, ...data]);
+    setHasMore(data.length === PAGE_SIZE);
+  } else {
+    setHasMore(false);
+  }
+  setLoading(false);
+};
 
-  useEffect(() => {
-    fetchListings(page);
-    // eslint-disable-next-line
-  }, [page]);
+useEffect(() => {
+  if (page === 1) {
+    setListings([]); // Clear listings when starting from the first page
+  }
+  fetchListings(page);
+  // eslint-disable-next-line
+}, [page]);
 
   // Infinite scroll observer
   useEffect(() => {
     if (!hasMore || loading) return;
     const observer = new IntersectionObserver(
-      entries => {
+      (entries) => {
         if (entries[0].isIntersecting) {
-          setPage(prev => prev + 1);
+          setPage((prev) => prev + 1);
         }
       },
       { threshold: 1 }
@@ -75,38 +76,35 @@ export default function Home() {
     };
   }, [hasMore, loading]);
 
-  const handleDisconnect = async () => {
-    if (address) {
-      await supabase
-        .from("users_duplicate")
-        .update({ is_signed_in: false })
-        .eq("wallet_address", address);
-    }
-    disconnect();
-    setStatus("Disconnected. Redirecting...");
-    setTimeout(() => router.push("/"), 800);
-  };
-
   return (
     <Layout>
       <div className={styles.container}>
-        <h1 className={styles.title}>Rental Listings</h1>       
+        <h1 className={styles.title}>Rental Listings</h1>
 
         <h2 className={styles.sectionTitle}>Latest Listings</h2>
         <div className={styles.listingsGrid}>
-          {listings.map(listing => (
-            <div key={listing.id} className={styles.listingCard}>
+          {listings.map((listing) => (
+            <Link
+              key={listing.id}
+              href={`/Lessee/Listing/${listing.id}`}
+              className={styles.listingCard}
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
               <img
                 src={listing.image_url}
                 alt={listing.title}
                 className={styles.listingImage}
               />
               <div className={styles.listingInfo}>
-                <div className={styles.listingTime}>{timeAgo(listing.created_at)}</div>
+                <div className={styles.listingTime}>
+                  {timeAgo(listing.created_at)}
+                </div>
                 <div className={styles.listingTitle}>{listing.title}</div>
-                <div className={styles.listingFee}>Rental Fee: <b>{listing.rental_fee} ETH</b></div>
+                <div className={styles.listingFee}>
+                  Rental Fee: <b>{listing.rental_fee} ETH</b>
+                </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
         {loading && <div className={styles.status}>Loading...</div>}
