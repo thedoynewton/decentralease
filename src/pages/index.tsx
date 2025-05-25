@@ -2,6 +2,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import type { NextPage } from 'next';
 import Head from 'next/head';
 import styles from '../styles/Home.module.css';
+import { SignMessage } from '../../components/SignMessage';
 
 const Home: NextPage = () => {
   return (
@@ -20,9 +21,9 @@ const Home: NextPage = () => {
 
       <main className={styles.main}>
         <ConnectButton />
-
+        <SignMessage />
         <h1 className={styles.title}>
-          Welcome to <a href="https://www.rainbowkit.com">Decentralease</a>
+          Welcome to <a href="https://decentralease.vercel.app/">Decentralease</a>
         </h1>
       </main>
 
