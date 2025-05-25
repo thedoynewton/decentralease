@@ -1,23 +1,50 @@
+import { useAccount, useDisconnect } from "wagmi";
+import { supabase } from "../../../supabase/supabase-client";
+import { useState } from "react";
+import { useRouter } from "next/router";
+
 import Layout from "../../../components/Layout";
 import styles from "../../styles/LesseeHome.module.css";
 
 export default function Profile() {
-  // You can fetch and display user info here
+const { address } = useAccount();
+  const { disconnect } = useDisconnect();
+  const [status, setStatus] = useState<string | null>(null);
+  const router = useRouter();
+
+  const handleDisconnect = async () => {
+    if (address) {
+      await supabase
+        .from("users_duplicate")
+        .update({ is_signed_in: false })
+        .eq("wallet_address", address);
+    }
+    disconnect();
+    setStatus("Disconnected. Redirecting...");
+    setTimeout(() => router.push("/"), 800);
+  };
+
   return (
     <Layout>
       <div className={styles.container}>
-        <h1 className={styles.title}>My Profile</h1>
-        <div className={styles.infoBox}>
-          <strong>Profile Information</strong>
-          <ul>
-            <li><b>Name:</b> John Doe</li>
-            <li><b>Email:</b> johndoe@email.com</li>
-            <li><b>Phone:</b> +1234567890</li>
-            <li><b>Location:</b> New York, USA</li>
-          </ul>
-          <button className={styles.actionButton} style={{marginTop: 16}}>Edit Profile</button>
-        </div>
-      </div>
+      <h1 className={styles.title}>Welcome to Decentralease!</h1>
+      <p className={styles.subtitle}>
+        {address
+          ? <>Connected as <span className={styles.address}>{address.slice(0, 6)}...{address.slice(-4)}</span></>
+          : "Connect your wallet to get started."}
+      </p>
+      {address && (
+        <button
+          className={styles.disconnectButton}
+          onClick={handleDisconnect}
+        >
+          Disconnect Wallet
+        </button>
+      )}
+      {status && (
+        <div className={styles.status}>{status}</div>
+      )}
+    </div>
     </Layout>
   );
 }
