@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { supabase } from "../../../supabase/supabase-client";
 import { useState } from "react";
 import styles from "../../styles/LesseeHome.module.css";
+import Layout from "../../../components/Layout";
 
 export default function Home() {
   const { address } = useAccount();
@@ -23,6 +24,7 @@ export default function Home() {
   };
 
   return (
+    <Layout>
     <div className={styles.container}>
       <h1 className={styles.title}>Welcome to Decentralease!</h1>
       <p className={styles.subtitle}>
@@ -64,5 +66,6 @@ export default function Home() {
         </ul>
       </div>
     </div>
+    </Layout>
   );
 }
