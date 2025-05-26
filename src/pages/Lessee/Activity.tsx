@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Layout from "../../../components/Layout";
-import styles from "../../styles/LesseeHome.module.css";
+import styles from "../../styles/LesseeActivity.module.css";
 import { createClient } from "@supabase/supabase-js";
 import { useAccount } from "wagmi";
 
@@ -79,20 +79,14 @@ export default function Activity() {
         <h1 className={styles.title}>Activity</h1>
 
         {/* Tabs */}
-        <div className={styles.tabContainer} style={{ marginBottom: "1rem" }}>
+        <div className={styles.tabContainer}>
           {STATUS_TABS.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              style={{
-                padding: "0.5rem 1rem",
-                marginRight: "0.5rem",
-                borderRadius: "6px",
-                border: "1px solid #ccc",
-                backgroundColor: activeTab === tab ? "#0070f3" : "#f0f0f0",
-                color: activeTab === tab ? "#fff" : "#000",
-                cursor: "pointer",
-              }}
+              className={`${styles.tabButton} ${
+                activeTab === tab ? styles.active : ""
+              }`}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
@@ -108,22 +102,17 @@ export default function Activity() {
           ) : (
             <ul>
               {filteredBookings.map((booking) => (
-                <li key={booking.id} style={{ marginBottom: "1rem" }}>
+                <li key={booking.id}>
                   {booking.listing_id?.image_url && (
                     <img
                       src={booking.listing_id.image_url}
                       alt={booking.listing_id.title}
-                      style={{
-                        width: "120px",
-                        height: "auto",
-                        borderRadius: "8px",
-                      }}
                     />
                   )}
                   <div>
                     <strong>{booking.listing_id?.title}</strong>
+                    <div>Total Amount: {booking.total_amount} ETH</div>
                   </div>
-                  <div>Total Amount: ${booking.total_amount}</div>
                 </li>
               ))}
             </ul>

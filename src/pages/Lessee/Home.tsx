@@ -6,6 +6,8 @@ import styles from "../../styles/LesseeHome.module.css";
 import Layout from "../../../components/Layout";
 import Link from "next/link";
 
+import { Search, Bell } from "@deemlol/next-icons";
+
 // Helper to format time ago
 function timeAgo(dateString: string) {
   const now = new Date();
@@ -34,54 +36,56 @@ export default function Home() {
   const { address } = useAccount();
 
   useEffect(() => {
-  const fetchUserId = async () => {
-    if (!address) return;
-    const { data, error } = await supabase
-      .from("users")
-      .select("id")
-      .eq("wallet_address", address)
-      .single();
+    const fetchUserId = async () => {
+      if (!address) return;
+      const { data, error } = await supabase
+        .from("users")
+        .select("id")
+        .eq("wallet_address", address)
+        .single();
 
-    if (error) {
-      console.error("Error fetching user ID:", error);
-      return;
-    }
+      if (error) {
+        console.error("Error fetching user ID:", error);
+        return;
+      }
 
-    setUserId(data.id);
-    setPage(1); // Reset pagination when user changes
-    setListings([]);
-  };
+      setUserId(data.id);
+      setPage(1); // Reset pagination when user changes
+      setListings([]);
+    };
 
-  fetchUserId();
-}, [address]);
+    fetchUserId();
+  }, [address]);
 
   // Fetch listings with pagination
-const fetchListings = async (pageNum: number) => {
-  setLoading(true);
-  const from = (pageNum - 1) * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
-  const { data, error } = await supabase
-    .from("listings")
-    .select("id,created_at,title,rental_fee,image_url")
-    .neq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .range(from, to);
+  const fetchListings = async (pageNum: number) => {
+    setLoading(true);
+    const from = (pageNum - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    const { data, error } = await supabase
+      .from("listings")
+      .select("id,created_at,title,rental_fee,image_url")
+      .neq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
-  if (!error && data) {
-    setListings((prev) => pageNum === 1 ? data : [...prev, ...data]);
-    setHasMore(data.length === PAGE_SIZE);
-  } else {
-    setHasMore(false);
-  }
-  setLoading(false);
-};
+    if (!error && data) {
+      setListings((prev) => (pageNum === 1 ? data : [...prev, ...data]));
+      setHasMore(data.length === PAGE_SIZE);
+    } else {
+      setHasMore(false);
+    }
+    setLoading(false);
+  };
 
-useEffect(() => {
-  if (!userId) return;
-  if (page === 1) {setListings([]);}
-  fetchListings(page);
-  // eslint-disable-next-line
-}, [userId,page]);
+  useEffect(() => {
+    if (!userId) return;
+    if (page === 1) {
+      setListings([]);
+    }
+    fetchListings(page);
+    // eslint-disable-next-line
+  }, [userId, page]);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -103,7 +107,13 @@ useEffect(() => {
   return (
     <Layout>
       <div className={styles.container}>
-        <h1 className={styles.title}>Rental Listings</h1>
+        <div className={styles.topBar}>
+          <h1 className={styles.title}>Rental Listings</h1>
+          <div className={styles.iconGroup}>
+            <Search size={24} className={styles.icon} />
+            <Bell size={24} className={styles.icon} />
+          </div>
+        </div>
 
         <div className={styles.listingsGrid}>
           {listings.map((listing) => (
