@@ -28,7 +28,7 @@ export default function Activity() {
       setLoading(true);
 
       const { data: user, error: userError } = await supabase
-        .from("users_duplicate")
+        .from("users")
         .select("id")
         .eq("wallet_address", address)
         .single();
@@ -41,8 +41,9 @@ export default function Activity() {
       }
 
       const { data: bookingsData, error: bookingsError } = await supabase
-        .from("bookings_duplicate")
-        .select(`
+        .from("bookings")
+        .select(
+          `
           id,
           total_amount,
           status,
@@ -50,7 +51,8 @@ export default function Activity() {
             title,
             image_url
           )
-        `)
+        `
+        )
         .in("status", STATUS_TABS)
         .eq("lessee_id", user.id);
 

@@ -16,7 +16,7 @@ const Home: NextPage = () => {
     const checkUser = async () => {
       if (!address) return;
       const { data, error } = await supabase
-        .from("users_duplicate")
+        .from("users")
         .select("is_signed_in, is_lessor")
         .eq("wallet_address", address)
         .single();

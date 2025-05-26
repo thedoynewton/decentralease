@@ -30,6 +30,30 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const loaderRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
+  const { address } = useAccount();
+
+  useEffect(() => {
+  const fetchUserId = async () => {
+    if (!address) return;
+    const { data, error } = await supabase
+      .from("users")
+      .select("id")
+      .eq("wallet_address", address)
+      .single();
+
+    if (error) {
+      console.error("Error fetching user ID:", error);
+      return;
+    }
+
+    setUserId(data.id);
+    setPage(1); // Reset pagination when user changes
+    setListings([]);
+  };
+
+  fetchUserId();
+}, [address]);
 
   // Fetch listings with pagination
 const fetchListings = async (pageNum: number) => {
@@ -39,6 +63,7 @@ const fetchListings = async (pageNum: number) => {
   const { data, error } = await supabase
     .from("listings")
     .select("id,created_at,title,rental_fee,image_url")
+    .neq("user_id", userId)
     .order("created_at", { ascending: false })
     .range(from, to);
 
@@ -52,12 +77,11 @@ const fetchListings = async (pageNum: number) => {
 };
 
 useEffect(() => {
-  if (page === 1) {
-    setListings([]); // Clear listings when starting from the first page
-  }
+  if (!userId) return;
+  if (page === 1) {setListings([]);}
   fetchListings(page);
   // eslint-disable-next-line
-}, [page]);
+}, [userId,page]);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -81,7 +105,6 @@ useEffect(() => {
       <div className={styles.container}>
         <h1 className={styles.title}>Rental Listings</h1>
 
-        <h2 className={styles.sectionTitle}>Latest Listings</h2>
         <div className={styles.listingsGrid}>
           {listings.map((listing) => (
             <Link

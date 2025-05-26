@@ -16,8 +16,8 @@ export function SignMessage() {
       if (isSuccess && address && data) {
         // Check if user exists
         const { data: user, error: fetchError } = await supabase
-        // .from("users")
-          .from("users_duplicate")
+          // .from("users")
+          .from("users")
           .select("id")
           .eq("wallet_address", address)
           .single();
@@ -30,13 +30,16 @@ export function SignMessage() {
         if (!user) {
           // New user: insert and route to CreateProfile
           const { error: upsertError } = await supabase
-          // .from("users")
-            .from("users_duplicate")
-            .upsert([
-              {
-                wallet_address: address,
-              },
-            ], { onConflict: 'wallet_address' });
+            // .from("users")
+            .from("users")
+            .upsert(
+              [
+                {
+                  wallet_address: address,
+                },
+              ],
+              { onConflict: "wallet_address" }
+            );
 
           if (upsertError) {
             setAuthStatus("Supabase error: " + upsertError.message);
@@ -47,8 +50,8 @@ export function SignMessage() {
         } else {
           // Existing user: update sign-in status and route to Home
           await supabase
-          // .from("users")
-            .from("users_duplicate") 
+            // .from("users")
+            .from("users")
             .update({ is_signed_in: true })
             .eq("wallet_address", address);
 
@@ -66,7 +69,7 @@ export function SignMessage() {
         <input
           type="text"
           value={message}
-          onChange={e => setMessage(e.target.value)}
+          onChange={(e) => setMessage(e.target.value)}
           placeholder="Message to sign"
           className={styles.input}
         />
@@ -89,11 +92,7 @@ export function SignMessage() {
           <strong>{authStatus}</strong>
         </div>
       )}
-      {error && (
-        <div className={styles.error}>
-          Error: {error.message}
-        </div>
-      )}
+      {error && <div className={styles.error}>Error: {error.message}</div>}
     </div>
   );
 }

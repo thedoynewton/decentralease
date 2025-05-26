@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@deemlol/next-icons": "^0.1.9",
     "@rainbow-me/rainbowkit": "^2.2.5",
     "@supabase/supabase-js": "^2.49.8",
     "@tanstack/react-query": "^5.55.3",

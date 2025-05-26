@@ -38,7 +38,7 @@ export default function ListingDetail() {
     if (!address) return;
     const fetchUser = async () => {
       const { data } = await supabase
-        .from("users_duplicate")
+        .from("users")
         .select("id,name,phone,location")
         .eq("wallet_address", address)
         .single();
@@ -93,7 +93,7 @@ export default function ListingDetail() {
 
     // Check for duplicate booking
     const { data: existing, error: checkError } = await supabase
-      .from("bookings_duplicate")
+      .from("bookings")
       .select("id")
       .eq("listing_id", listing.id)
       .eq("lessee_id", user?.id)
@@ -109,7 +109,7 @@ export default function ListingDetail() {
       return { message: "Duplicate booking" };
     }
 
-    const { error } = await supabase.from("bookings_duplicate").insert([
+    const { error } = await supabase.from("bookings").insert([
       {
         listing_id: listing.id,
         lessee_name: user?.name || "",
