@@ -24,33 +24,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const apiUrl = new URL('https://maps.googleapis.com/maps/api/place/autocomplete/json');
   apiUrl.searchParams.append('input', input);
   apiUrl.searchParams.append('key', GOOGLE_PLACES_API_KEY);
-  apiUrl.searchParams.append('types', '(cities)'); // Restrict to cities, or 'geocode' for broader results
-  apiUrl.searchParams.append('components', 'country:ph'); // Optionally restrict to Philippines
 
+  // CHANGED: Use 'geocode' type for broader results (addresses, neighborhoods, etc.)
+  apiUrl.searchParams.append('types', 'geocode');
+
+  // Keep country restriction
+  apiUrl.searchParams.append('components', 'country:ph'); // Restrict to Philippines
+
+  // UNCOMMENTED & CONFIGURED: Strong bias towards Davao City
+  // Davao City, Philippines coordinates: approx 7.1907° N, 125.4553° E
+  apiUrl.searchParams.append('location', '7.1907,125.4553');
+  apiUrl.searchParams.append('radius', '50000'); // 50km radius around Davao (adjust as needed, e.g., 20000 for 20km)
+
+  // The 'location_bias' parameter from the request query is not directly used here
+  // as we're hardcoding the bias for Davao City for simplicity.
+  // If you want dynamic biasing based on user input, you'd integrate `location_bias` here.
   if (location_bias && typeof location_bias === 'string') {
-    // Example for location bias: 'point:latitude,longitude' or 'circle:radius@latitude,longitude'
-    // For "Davao City, Philippines" as a strong bias:
-    // This is more complex and usually requires a specific lat/lng.
-    // For simplicity, we can use it to suggest results biased towards the Philippines.
-    // You might need to adjust this based on the exact bias you want.
-    // For biasing towards Davao City, you'd need its coordinates.
-    // For now, let's keep it simple with components or just let Google handle it.
+    // You could parse `location_bias` here if it contains coordinates or a place ID
+    // to dynamically set location/radius, but for now, we're using fixed Davao coordinates.
   }
-  // For Davao City bias, you would ideally get its lat/lng:
-  // For Davao City, Philippines: 7.1907° N, 125.4553° E
-  // apiUrl.searchParams.append('location', '7.1907,125.4553');
-  // apiUrl.searchParams.append('radius', '50000'); // 50km radius around Davao
 
   try {
     const response = await fetch(apiUrl.toString());
     const data = await response.json();
 
-    if (data.status === 'OK') {
+    if (response.ok && data.status === 'OK') {
       // Filter predictions to only include places with a 'formatted_address' or 'description'
       const formattedPredictions = data.predictions.map((prediction: any) => ({
         id: prediction.place_id,
-        name: prediction.structured_formatting.main_text, // Main name of the place
-        address: prediction.description, // Full address/description
+        name: prediction.structured_formatting.main_text, // Main name of the place (e.g., "Obrero")
+        address: prediction.description, // Full address/description (e.g., "Obrero, Davao City, Davao del Sur, Philippines")
       }));
       return res.status(200).json({ places: formattedPredictions });
     } else {

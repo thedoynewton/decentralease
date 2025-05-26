@@ -336,11 +336,6 @@ export default function LesseePost() {
       </div>
 
       <form onSubmit={handleSubmit}>
-        {!isConnected && (
-          <p className={styles.walletPrompt}>
-            Please connect your wallet to create a post.
-          </p>
-        )}
 
         {isLoadingCategories && <p>Loading categories...</p>}
         {fetchError && <p className={`${styles.transactionStatus} ${styles.transactionStatusError}`}>{fetchError}</p>}
