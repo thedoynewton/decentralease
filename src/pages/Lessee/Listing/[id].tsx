@@ -51,7 +51,7 @@ export default function ListingDetail() {
     if (!id) return;
     const fetchListing = async () => {
       const { data, error } = await supabase
-        .from("listings")
+        .from("listings_duplicate")
         .select("*")
         .eq("id", id)
         .single();

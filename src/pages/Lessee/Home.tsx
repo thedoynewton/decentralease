@@ -37,7 +37,7 @@ const fetchListings = async (pageNum: number) => {
   const from = (pageNum - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
   const { data, error } = await supabase
-    .from("listings")
+    .from("listings_duplicate")
     .select("id,created_at,title,rental_fee,image_url")
     .order("created_at", { ascending: false })
     .range(from, to);
