@@ -86,6 +86,16 @@ export default function LesseePost() {
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
   const [locationSearchError, setLocationSearchError] = useState<string | null>(null);
 
+  const getTodayDateString = useCallback(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const todayDate = getTodayDateString();
+
 
   // --- Fetch Categories and Subcategories on component mount ---
   useEffect(() => {
@@ -146,8 +156,13 @@ export default function LesseePost() {
     }
   }, []);
 
+  // Find the selected category and subcategory IDs
   const selectedCategoryId = allCategories.find(
     (cat) => cat.name === formData.category
+  )?.id;
+
+  const selectedSubCategoryId = allSubCategories.find(
+    (subCat) => subCat.name === formData.subCategory && subCat.category_id === selectedCategoryId
   )?.id;
 
   const filteredSubCategories = allSubCategories.filter(
@@ -164,7 +179,7 @@ export default function LesseePost() {
 
     const filePath = `${address}/${Date.now()}-${file.name}`;
     const { data, error } = await supabase.storage
-      .from('rental-images')
+      .from('post-images')
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false
@@ -176,7 +191,7 @@ export default function LesseePost() {
     }
 
     const { data: publicUrlData } = supabase.storage
-      .from('rental-images')
+      .from('post-images')
       .getPublicUrl(filePath);
 
     if (publicUrlData) {
@@ -186,6 +201,27 @@ export default function LesseePost() {
       throw new Error(`Could not get public URL for uploaded image.`);
     }
   };
+  
+  const getUserId = useCallback(async (walletAddress: string): Promise<string> => {
+    const { data: userData, error: fetchError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('wallet_address', walletAddress)
+      .single(); // Use single() because wallet_address should be unique
+
+    if (fetchError) {
+      // If no rows found (PGRST116), or any other error, log and throw
+      console.error('Error fetching user ID:', fetchError);
+      throw new Error(`Failed to fetch user ID for wallet address ${walletAddress}: ${fetchError.message}. Make sure the user exists.`);
+    }
+
+    if (!userData) {
+      // This case should ideally be caught by fetchError above, but as a safeguard
+      throw new Error(`User with wallet address ${walletAddress} not found.`);
+    }
+
+    return userData.id; // Return the UUID
+  }, []);
 
   const handleSubmit = useCallback(async (e: FormEvent) => {
     e.preventDefault();
@@ -205,6 +241,19 @@ export default function LesseePost() {
       return;
     }
 
+    // Ensure category and subcategory IDs are found
+    if (!selectedCategoryId) {
+      alert('Invalid category selected. Please try again.');
+      setIsSubmitting(false);
+      return;
+    }
+    // Only check subcategory ID if a subcategory was selected (it might be optional)
+    if (formData.subCategory && !selectedSubCategoryId) {
+      alert('Invalid subcategory selected. Please try again.');
+      setIsSubmitting(false);
+      return;
+    }
+
     if (new Date(formData.pickupDate) > new Date(formData.returnDate)) {
       alert('Return date cannot be earlier than pickup date.');
       setIsSubmitting(false);
@@ -212,22 +261,28 @@ export default function LesseePost() {
     }
 
     try {
+      // Step 1: Get the user_id (UUID) based on the wallet address
+      // THIS WILL THROW AN ERROR IF THE USER DOES NOT ALREADY EXIST IN YOUR 'users' TABLE!
+      const userId = await getUserId(address);
+      console.log('Using user ID:', userId);
+      // Step 2: Upload image
       const imageUrls = await uploadImagesToSupabase(formData.images);
-      console.log('Image uploaded to Supabase:', imageUrls[0]);
+      console.log('Image uploaded to storage:', imageUrls[0]);
 
+      // Step 3: Insert form data with the obtained user_id (UUID)
       const { data, error } = await supabase
         .from('posts')
         .insert([
           {
-            owner_address: address,
+            user_id: userId,
             title: formData.title,
             description: formData.description,
-            category: formData.category,
-            sub_category: formData.subCategory,
+            category_id: selectedCategoryId,
+            subcategory_id: selectedSubCategoryId || null,
             location: formData.location,
             pickup_date: formData.pickupDate,
             return_date: formData.returnDate,
-            image_urls: imageUrls,
+            image_url: imageUrls[0],
           },
         ])
         .select();
@@ -262,7 +317,7 @@ export default function LesseePost() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, isConnected, address]);
+  }, [formData, isConnected, address, allCategories, allSubCategories, selectedCategoryId, selectedSubCategoryId, getUserId]);
 
 
   const handleGoBack = () => {
@@ -450,6 +505,7 @@ export default function LesseePost() {
             onChange={handleChange}
             required
             className={styles.input}
+            min={todayDate}
           />
         </div>
 
@@ -463,6 +519,7 @@ export default function LesseePost() {
             onChange={handleChange}
             required
             className={styles.input}
+            min={formData.pickupDate}
           />
         </div>
 
