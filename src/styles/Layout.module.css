@@ -1,3 +1,5 @@
+/* styles/Layout.module.css */
+
 .layout {
   min-height: 100vh;
   display: flex;
@@ -33,22 +35,56 @@
   padding: 1rem 0;
 }
 
+/* Base styles for tabbar - it's initially hidden by media query */
 .tabbar {
-  display: none;
+  display: none; /* Hidden by default, shown on max-width: 700px */
 }
 
+/* This is the new Create Post FAB button style */
+.createPostButton {
+  background-color: #0070f3; /* A prominent blue */
+  color: white;
+  width: 56px; /* Standard FAB size */
+  height: 56px; /* Standard FAB size */
+  border-radius: 50%; /* Make it circular */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2.2em; /* Large plus sign */
+  font-weight: bold;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Stronger shadow for FAB */
+  position: absolute; /* Position it absolutely within the tab bar's context */
+  bottom: 10px; /* Adjust this value if needed to float above the tabbar */
+  left: 50%;
+  transform: translateX(-50%); /* Center horizontally */
+  z-index: 101; /* Ensure it's above everything else */
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  cursor: pointer;
+}
+
+.createPostButton:hover {
+  background-color: #005bb5;
+  transform: translateX(-50%) scale(1.05); /* Slight scale on hover */
+}
+
+/* Existing tabLink styles */
 .tabLink {
-  flex: 1;
+  flex: 1; /* Allows them to take up equal space */
   text-align: center;
   padding: 0.7rem 0 0.3rem 0;
   color: #2d3748;
   text-decoration: none;
-  font-size: 1.1rem;
+  font-size: 1.1rem; /* This is the icon size, label is below */
   display: flex;
-  flex-direction: column;
+  flex-direction: column; /* Stack icon and label */
   align-items: center;
-  border-top: 2px solid transparent;
+  border-top: 2px solid transparent; /* Keep for active state */
   transition: color 0.2s, border-color 0.2s;
+  position: relative; /* Needed for z-index if overlapping */
+  z-index: 10; /* Ensures tab links are clickable around the FAB */
+  /* Add padding-left/right to push them away from the center button */
+  padding-left: 5px;
+  padding-right: 5px;
 }
 
 .tabLink:hover,
@@ -58,19 +94,22 @@
 }
 
 .icon {
-  font-size: 1.3rem;
+  font-size: 1.3rem; /* Adjusted for icon size */
 }
 
 .label {
-  font-size: 0.9rem;
+  font-size: 0.75rem; /* Smaller label for tab bar */
+  margin-top: 2px; /* Small space between icon and label */
+  line-height: 1; /* Prevent extra line height */
 }
+
 
 @media (max-width: 700px) {
   .navbar {
     display: none;
   }
   .tabbar {
-    display: flex;
+    display: flex; /* Show tabbar on small screens */
     position: fixed;
     bottom: 0;
     left: 0;
@@ -78,11 +117,24 @@
     background: #fff;
     border-top: 1px solid #eaeaea;
     z-index: 100;
-    height: 56px;
+    height: 65px; /* Increased height to accommodate FAB, adjust as needed */
+    /* Use 'space-around' to distribute items, now including the FAB's space */
     justify-content: space-around;
-    align-items: center;
+    align-items: flex-start; /* Align items to top to allow FAB to float */
+    padding-top: 5px; /* Adjust padding to make space for FAB to float up */
   }
   .content {
-    padding-bottom: 60px; /* space for tabbar */
+    padding-bottom: 75px; /* Increased space for the slightly taller tabbar */
+  }
+
+  /*
+    Strategic empty space for the FAB.
+    This creates invisible placeholders to push the other tab links away
+    from the center where the FAB will float.
+  */
+  .tabbarSpacer {
+    width: 66px; /* Slightly wider than FAB to give breathing room */
+    height: 56px; /* Same height as FAB */
+    visibility: hidden; /* Make it invisible */
   }
 }
