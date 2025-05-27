@@ -1,0 +1,32 @@
+.bookingSummaryCard {
+  background: #f3f6fa;
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  font-size: 1rem;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.summaryLabel {
+  color: #555;
+  font-weight: 500;
+}
+
+.summaryValue {
+  color: #222;
+  font-weight: 600;
+}
+
+@media (min-width: 768px) {
+  .bookingSummaryCard {
+    padding: 20px 28px;
+    margin-bottom: 24px;
+    font-size: 1.05rem;
+  }
+}

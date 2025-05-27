@@ -3,15 +3,19 @@ import Layout from "../../../components/Layout";
 import styles from "../../styles/Inbox.module.css";
 import { useAccount } from "wagmi";
 import { supabase } from "../../../supabase/supabase-client";
+import BookingSummaryCard from "../../../components/BookingSummaryCard";
 
 interface Booking {
   id: string;
-  property_name: string;
   status: string;
   lessee_id: string;
   lessorName?: string;
   lessorProfileImageUrl?: string;
-  created_at: string;
+  updated_at: string;
+  total_amount?: number;
+  pickup_date?: string;
+  return_date?: string;
+  listing_title?: string;
 }
 
 // --- Time ago utility ---
@@ -94,8 +98,10 @@ export default function Inbox() {
             *,
             listings (
               user_id,
+              title,
               users (
-                name
+                name,
+                profile_image_url
               )
             )
             `
@@ -110,12 +116,16 @@ export default function Inbox() {
         }
 
         const bookingsWithLessor =
-          data?.map((booking: any) => ({
-            ...booking,
-            lessorName: booking.listings?.users?.name || "N/A",
-            lessorProfileImageUrl: booking.listings?.users?.profile_image_url || null, 
-            created_at: booking.created_at,
-          })) || [];
+        data?.map((booking: any) => ({
+          ...booking,
+          lessorName: booking.listings?.users?.name || "N/A",
+          lessorProfileImageUrl: booking.listings?.users?.profile_image_url || null,
+          updated_at: booking.updated_at,
+          total_amount: booking.total_amount,
+          pickup_date: booking.pickup_date,
+          return_date: booking.return_date,
+          listing_title: booking.listings?.title || "N/A",
+        })) || [];
 
         setApprovedBookings(bookingsWithLessor);
         // Auto-select the first booking if available (desktop only)
@@ -181,12 +191,9 @@ export default function Inbox() {
                   )}
                 </div>
                 <div>
-                  <div className={styles.propertyName}>
-                    {booking.property_name}
-                  </div>
                   <div className={styles.lessorName}>{booking.lessorName}</div>
                   <div style={{ fontSize: "0.85em", color: "#888" }}>
-                    {timeAgo(booking.created_at)}
+                    {timeAgo(booking.updated_at)}
                   </div>
                 </div>
               </li>
@@ -198,6 +205,7 @@ export default function Inbox() {
         {!isMobile && selectedBooking && (
           <div className={styles.main}>
             <div className={styles.bookingDetails}>
+              <BookingSummaryCard booking={selectedBooking} />
               <div
                 style={{
                   display: "flex",
@@ -223,7 +231,6 @@ export default function Inbox() {
                   </div>
                 )}
                 <div>
-                  <h3 style={{ margin: 0 }}>{selectedBooking.property_name}</h3>
                   <div>{selectedBooking.lessorName}</div>
                 </div>
               </div>
@@ -266,10 +273,10 @@ export default function Inbox() {
                   </div>
                 )}
                 <div className={styles.lessorProfileName}>
-                  <h3 style={{ margin: 0 }}>{selectedBooking.property_name}</h3>
                   <div>{selectedBooking.lessorName}</div>
                 </div>
               </div>
+              <BookingSummaryCard booking={selectedBooking} />
               <p>
                 <b>Status:</b> {selectedBooking.status}
               </p>
