@@ -1,0 +1,267 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.backButton {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #4a5568;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.backButton:hover {
+  background: #f7fafc;
+  border-color: #4F46E5;
+  color: #4F46E5;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.imageUpload {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.imageInput {
+  display: none;
+}
+
+.imageLabel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #e2e8f0;
+  border-radius: 12px;
+  padding: 2rem;
+  cursor: pointer;
+  min-height: 200px;
+  background: #f8fafc;
+  transition: border-color 0.2s;
+}
+
+.imageLabel:hover {
+  border-color: #4F46E5;
+}
+
+.addPhotoIcon {
+  font-size: 2rem;
+  color: #4F46E5;
+  margin-bottom: 0.5rem;
+}
+
+.imagePreviewGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+.imagePreviewContainer {
+  position: relative;
+  aspect-ratio: 1;
+}
+
+.imagePreview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.removeImageButton {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #dc2626;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0;
+  transition: background-color 0.2s;
+}
+
+.removeImageButton:hover {
+  background: #b91c1c;
+}
+
+.imageHelp {
+  margin-top: 0.5rem;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: #4F46E5;
+}
+
+.select {
+  background-color: white;
+}
+
+.select:disabled {
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+}
+
+.textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.feeSection,
+.conditionsSection {
+  background: #f8fafc;
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.feeSection h3,
+.conditionsSection h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: #1e293b;
+}
+
+.conditionRow {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.removeButton {
+  padding: 0.5rem 1rem;
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.2s;
+}
+
+.removeButton:hover {
+  background: #fecaca;
+}
+
+.addButton {
+  width: 100%;
+  padding: 0.75rem;
+  background: #f1f5f9;
+  border: 1px dashed #94a3b8;
+  border-radius: 8px;
+  color: #475569;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.addButton:hover {
+  background: #e2e8f0;
+  border-color: #64748b;
+}
+
+.submitButton {
+  padding: 1rem;
+  background: #4F46E5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submitButton:hover {
+  background: #4338ca;
+}
+
+.submitButton:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .header {
+    margin-bottom: 1.5rem;
+  }
+
+  .header h1 {
+    font-size: 1.25rem;
+  }
+
+  .backButton {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.875rem;
+  }
+
+  .imageLabel {
+    padding: 1.5rem;
+    min-height: 150px;
+  }
+
+  .feeSection,
+  .conditionsSection {
+    padding: 1rem;
+  }
+
+  .conditionRow {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .removeButton {
+    width: 100%;
+  }
+} 
