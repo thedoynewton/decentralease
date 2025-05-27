@@ -2,7 +2,16 @@ import { useAccount, useDisconnect } from "wagmi";
 import { supabase } from "../../../supabase/supabase-client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import { User, PlusCircle, Email, Phone, MapPin, Filter } from "@deemlol/next-icons";
+import {
+  User,
+  PlusCircle,
+  Email,
+  Phone,
+  MapPin,
+  Filter,
+  Menu,
+  Copy,
+} from "@deemlol/next-icons";
 
 import Layout from "../../../components/Layout";
 import styles from "../../styles/Profile.module.css";
@@ -17,21 +26,69 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false);
   const [name, setName] = useState<string>("Username");
   const [iconSize, setIconSize] = useState(28);
-  const [postImages, setPostImages] = useState<{ image_url: string; title: string; category_id?: string | number }[]>([]);
-  const [filteredImages, setFilteredImages] = useState<{ image_url: string; title: string; category_id?: string | number }[]>([]);
+  const [postImages, setPostImages] = useState<
+    { image_url: string; title: string; category_id?: string | number }[]
+  >([]);
+  const [filteredImages, setFilteredImages] = useState<
+    { image_url: string; title: string; category_id?: string | number }[]
+  >([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
   const [location, setLocation] = useState<string>("");
   const [search, setSearch] = useState<string>("");
   const [category, setCategory] = useState<string>("");
-  const [categoriesList, setCategoriesList] = useState<{ id: string | number; name: string }[]>([]);
+  const [categoriesList, setCategoriesList] = useState<
+    { id: string | number; name: string }[]
+  >([]);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
+
+  // Copy wallet address to clipboard
+  const handleCopyAddress = () => {
+  if (!address) return;
+
+  // Modern clipboard API
+  if (
+    typeof navigator !== "undefined" &&
+    navigator.clipboard &&
+    typeof navigator.clipboard.writeText === "function"
+  ) {
+    navigator.clipboard.writeText(address)
+      .then(() => {
+        setCopyStatus("Copied to clipboard!");
+        setTimeout(() => setCopyStatus(null), 1500);
+      })
+      .catch(() => {
+        setCopyStatus("Failed to copy.");
+        setTimeout(() => setCopyStatus(null), 1500);
+      });
+  } else {
+    // Fallback for older browsers (including iOS Safari)
+    try {
+      const textarea = document.createElement("textarea");
+      textarea.value = address;
+      textarea.style.position = "fixed"; // Prevent scrolling to bottom of page in MS Edge.
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      setCopyStatus("Copied to clipboard!");
+    } catch {
+      setCopyStatus("Failed to copy.");
+    }
+    setTimeout(() => setCopyStatus(null), 1500);
+  }
+};
 
   // Fetch categories for dropdown
   useEffect(() => {
     const fetchCategories = async () => {
-      const { data, error } = await supabase.from("categories").select("id, name");
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name");
       if (!error && Array.isArray(data)) {
         setCategoriesList(data);
       }
@@ -40,6 +97,7 @@ export default function Profile() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const handleResize = () => {
       setIconSize(window.innerWidth <= 600 ? 20 : 28);
     };
@@ -104,8 +162,8 @@ export default function Profile() {
       );
     }
     if (category) {
-      filtered = filtered.filter((post) =>
-        post.category_id?.toString() === category
+      filtered = filtered.filter(
+        (post) => post.category_id?.toString() === category
       );
     }
     setFilteredImages(filtered);
@@ -193,6 +251,38 @@ export default function Profile() {
   return (
     <Layout>
       <div className={styles.igProfileContainer}>
+        {address && (
+          <div className={styles.walletRow}>
+            <div className={styles.walletAddress}>
+              {address.slice(0, 6)}...{address.slice(-4)}
+              <span
+                className={styles.copyIconWrapper}
+                onClick={handleCopyAddress}
+                title="Copy address"
+                tabIndex={0}
+                style={{
+                  cursor: "pointer",
+                  marginLeft: 8,
+                  display: "inline-flex",
+                  verticalAlign: "middle",
+                }}
+                role="button"
+                aria-label="Copy wallet address"
+                onKeyPress={(e) => {
+                  if (e.key === "Enter" || e.key === " ") handleCopyAddress();
+                }}
+              >
+                <Copy size={18} color="#1976d2" />
+              </span>
+            </div>
+            <span className={styles.menuIconWrapper}>
+              <Menu size={28} color="#1976d2" />
+            </span>
+          </div>
+        )}
+        {copyStatus && (
+          <div className={styles.copyNotification}>{copyStatus}</div>
+        )}
         <div className={styles.igProfileHeader}>
           <div
             className={styles.igAvatar}
@@ -235,8 +325,8 @@ export default function Profile() {
             />
           </div>
           <div className={styles.igProfileInfo}>
+            <h2 className={styles.igUsername}>{profile.username}</h2>
             <div className={styles.mobileProfileNamePosts}>
-              <h2 className={styles.igUsername}>{profile.username}</h2>
               <span className={styles.mobilePostsCount}>
                 <strong>{profile.posts}</strong> posts
               </span>
@@ -261,15 +351,24 @@ export default function Profile() {
         <div className={styles.aboutSection}>
           <h2 className={styles.aboutTitle}>About me</h2>
           <div>
-            <Email size={18} style={{ verticalAlign: "middle", marginRight: 6 }} />
+            <Email
+              size={18}
+              style={{ verticalAlign: "middle", marginRight: 6 }}
+            />
             <span>{email || "—"}</span>
           </div>
           <div>
-            <Phone size={18} style={{ verticalAlign: "middle", marginRight: 6 }} />
+            <Phone
+              size={18}
+              style={{ verticalAlign: "middle", marginRight: 6 }}
+            />
             <span>{phone || "—"}</span>
           </div>
           <div>
-            <MapPin size={18} style={{ verticalAlign: "middle", marginRight: 6 }} />
+            <MapPin
+              size={18}
+              style={{ verticalAlign: "middle", marginRight: 6 }}
+            />
             <span>{location || "—"}</span>
           </div>
         </div>
@@ -279,7 +378,7 @@ export default function Profile() {
             type="text"
             placeholder="Search posts title..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             className={styles.searchBar}
           />
           <div className={styles.filterWrapper}>
@@ -294,7 +393,10 @@ export default function Profile() {
             {showCategoryDropdown && (
               <div className={styles.categoryDropdown}>
                 <div
-                  className={styles.categoryDropdownItem + (!category ? " " + styles.selectedCategory : "")}
+                  className={
+                    styles.categoryDropdownItem +
+                    (!category ? " " + styles.selectedCategory : "")
+                  }
                   onClick={() => {
                     setCategory("");
                     setShowCategoryDropdown(false);
@@ -305,7 +407,12 @@ export default function Profile() {
                 {categoriesList.map((cat) => (
                   <div
                     key={cat.id}
-                    className={styles.categoryDropdownItem + (category === cat.id.toString() ? " " + styles.selectedCategory : "")}
+                    className={
+                      styles.categoryDropdownItem +
+                      (category === cat.id.toString()
+                        ? " " + styles.selectedCategory
+                        : "")
+                    }
                     onClick={() => {
                       setCategory(cat.id.toString());
                       setShowCategoryDropdown(false);
@@ -320,13 +427,19 @@ export default function Profile() {
         </div>
         <div className={styles.igPostsGrid}>
           {profile.postImages.length === 0 ? (
-            <div style={{ gridColumn: "1/-1", textAlign: "center", color: "#888" }}>
+            <div
+              style={{ gridColumn: "1/-1", textAlign: "center", color: "#888" }}
+            >
               No posts found.
             </div>
           ) : (
             profile.postImages.map((img, idx) => (
               <div key={idx} className={styles.igPostItem}>
-                <img src={img.image_url} alt={img.title || `Post ${idx + 1}`} title={img.title} />
+                <img
+                  src={img.image_url}
+                  alt={img.title || `Post ${idx + 1}`}
+                  title={img.title}
+                />
               </div>
             ))
           )}
