@@ -15,6 +15,7 @@ import {
 
 import Layout from "../../../components/Layout";
 import styles from "../../styles/Profile.module.css";
+import EditProfileModal from "../../../components/EditProfileModal";
 
 export default function Profile() {
   const router = useRouter();
@@ -45,6 +46,36 @@ export default function Profile() {
 
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const [showMenuOptions, setShowMenuOptions] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+
+  // Save profile changes
+  const handleSaveProfile = async (data: { name: string; email: string; phone: string; location: string }) => {
+    if (!address) return;
+    setEditLoading(true);
+    const { error } = await supabase
+      .from("users")
+      .update({
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        location: data.location,
+      })
+      .eq("wallet_address", address);
+    setEditLoading(false);
+    if (!error) {
+      setName(data.name);
+      setEmail(data.email);
+      setPhone(data.phone);
+      setLocation(data.location);
+      setShowEditModal(false);
+      setStatus("Profile updated!");
+      setTimeout(() => setStatus(null), 1500);
+    } else {
+      setStatus("Failed to update profile.");
+      setTimeout(() => setStatus(null), 1500);
+    }
+  };
 
   // Close menu options when clicking outside
   const menuRef = useRef<HTMLDivElement>(null);
@@ -266,6 +297,13 @@ export default function Profile() {
   return (
     <Layout>
       <div className={styles.igProfileContainer}>
+        <EditProfileModal
+          open={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          user={{ name, email, phone, location }}
+          onSave={handleSaveProfile}
+          loading={editLoading}
+        />
         {address && (
           <div className={styles.walletRow}>
             <div className={styles.walletAddress}>
@@ -322,11 +360,10 @@ export default function Profile() {
                     className={styles.menuDropdownItem}
                     onClick={() => {
                       setShowMenuOptions(false);
-                      // Add your settings navigation here
-                      setStatus("Settings clicked!"); // Example
+                      setShowEditModal(true);                     
                     }}
                   >
-                    Settings
+                    Edit Profile
                   </div>
                   <div
                     className={styles.menuDropdownItem}
