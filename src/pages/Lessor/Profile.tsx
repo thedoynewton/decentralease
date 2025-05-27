@@ -351,7 +351,7 @@ export default function Profile() {
                 }}
                 role="button"
                 aria-label="Copy wallet address"
-                onKeyPress={(e) => {
+                onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") handleCopyAddress();
                 }}
               >

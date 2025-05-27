@@ -1,7 +1,10 @@
 .container {
-  max-width: 800px;
+  max-width: 600px;
   margin: 0 auto;
   padding: 2rem 1rem;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
 }
 
 .header {
@@ -11,11 +14,16 @@
   gap: 1rem;
 }
 
-.header h1 {
+.header h1,
+.title {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1a202c;
+  font-size: 2em;
+  font-weight: 700;
+  color: #1976d2;
+  flex: 1;
+  text-align: center;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
 }
 
 .backButton {
@@ -23,16 +31,16 @@
   background: none;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  color: #4a5568;
+  color: #1976d2;
   cursor: pointer;
   font-size: 1rem;
-  transition: all 0.2s;
+  transition: background 0.2s, color 0.2s;
 }
 
 .backButton:hover {
   background: #f7fafc;
-  border-color: #4F46E5;
-  color: #4F46E5;
+  border-color: #1976d2;
+  color: #1251a3;
 }
 
 .form {
@@ -43,7 +51,7 @@
 
 .imageUpload {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .imageInput {
@@ -59,38 +67,37 @@
   border-radius: 12px;
   padding: 2rem;
   cursor: pointer;
-  min-height: 200px;
+  min-height: 180px;
   background: #f8fafc;
   transition: border-color 0.2s;
 }
 
 .imageLabel:hover {
-  border-color: #4F46E5;
+  border-color: #1976d2;
 }
 
 .addPhotoIcon {
-  font-size: 2rem;
-  color: #4F46E5;
+  font-size: 2.2rem;
+  color: #1976d2;
   margin-bottom: 0.5rem;
-}
-
-.imagePreviewGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 1rem;
-  width: 100%;
 }
 
 .imagePreviewContainer {
   position: relative;
-  aspect-ratio: 1;
+  width: 140px;
+  height: 140px;
+  margin: 0 auto;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f3f4f6;
 }
 
 .imagePreview {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 10px;
+  display: block;
 }
 
 .removeImageButton {
@@ -120,7 +127,7 @@
 .imageHelp {
   margin-top: 0.5rem;
   color: #64748b;
-  font-size: 0.875rem;
+  font-size: 0.95rem;
 }
 
 .input,
@@ -133,12 +140,13 @@
   font-size: 1rem;
   outline: none;
   transition: border-color 0.2s;
+  background: #fafbfc;
 }
 
 .input:focus,
 .select:focus,
 .textarea:focus {
-  border-color: #4F46E5;
+  border-color: #1976d2;
 }
 
 .select {
@@ -151,14 +159,14 @@
 }
 
 .textarea {
-  min-height: 120px;
+  min-height: 100px;
   resize: vertical;
 }
 
 .feeSection,
 .conditionsSection {
   background: #f8fafc;
-  padding: 1.5rem;
+  padding: 1.2rem;
   border-radius: 12px;
 }
 
@@ -166,7 +174,8 @@
 .conditionsSection h3 {
   margin: 0 0 1rem 0;
   font-size: 1.1rem;
-  color: #1e293b;
+  color: #1976d2;
+  font-weight: 600;
 }
 
 .conditionRow {
@@ -182,7 +191,7 @@
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 0.95rem;
   transition: background-color 0.2s;
 }
 
@@ -198,29 +207,29 @@
   border-radius: 8px;
   color: #475569;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 0.95rem;
   transition: all 0.2s;
 }
 
 .addButton:hover {
   background: #e2e8f0;
-  border-color: #64748b;
+  border-color: #1976d2;
 }
 
 .submitButton {
   padding: 1rem;
-  background: #4F46E5;
+  background: #1976d2;
   color: white;
   border: none;
   border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 1.1rem;
+  font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .submitButton:hover {
-  background: #4338ca;
+  background: #1251a3;
 }
 
 .submitButton:disabled {
@@ -228,40 +237,34 @@
   cursor: not-allowed;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 600px) {
   .container {
-    padding: 1rem;
+    padding: 1rem 0.5rem;
+    border-radius: 0;
+    box-shadow: none;
   }
-
   .header {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.2rem;
   }
-
-  .header h1 {
-    font-size: 1.25rem;
+  .header h1,
+  .title {
+    font-size: 1.25em;
+    margin-bottom: 1rem;
   }
-
-  .backButton {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.875rem;
-  }
-
   .imageLabel {
-    padding: 1.5rem;
-    min-height: 150px;
+    padding: 1rem;
+    min-height: 120px;
   }
-
+  .imagePreviewContainer {
+    width: 90px;
+    height: 90px;
+  }
   .feeSection,
   .conditionsSection {
-    padding: 1rem;
+    padding: 0.8rem;
   }
-
   .conditionRow {
     flex-direction: column;
     gap: 0.5rem;
   }
-
-  .removeButton {
-    width: 100%;
-  }
-} 
+}
