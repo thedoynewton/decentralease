@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import Layout from "../../../components/Layout";
+import Layout from "../../../components/LesseeLayout";
 import styles from "../../styles/Inbox.module.css";
 import { useAccount } from "wagmi";
 import { supabase } from "../../../supabase/supabase-client";

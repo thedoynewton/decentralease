@@ -1,10 +1,10 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
-import Layout from "../../../../components/Layout";
 import styles from "../../../styles/ListingDetails.module.css";
 import stylesModal from "../../../styles/BookingModal.module.css";
 import { supabase } from "../../../../supabase/supabase-client";
+import Layout from "../../../../components/LesseeLayout";
 
 function timeAgo(dateString: string) {
   const now = new Date();

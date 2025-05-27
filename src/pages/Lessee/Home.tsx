@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { supabase } from "../../../supabase/supabase-client";
 import { useState, useEffect, useRef } from "react";
 import styles from "../../styles/LesseeHome.module.css";
-import Layout from "../../../components/Layout";
+import Layout from "../../../components/LesseeLayout";
 import Link from "next/link";
 
 import { Search, Bell } from "@deemlol/next-icons";

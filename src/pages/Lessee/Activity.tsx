@@ -1,6 +1,6 @@
 // Activity.tsx
 import { useCallback, useEffect, useRef, useState } from "react";
-import Layout from "../../../components/Layout";
+import Layout from "../../../components/LesseeLayout";
 import styles from "../../styles/LesseeActivity.module.css";
 import { useAccount } from "wagmi";
 import { supabase } from "../../../supabase/supabase-client";

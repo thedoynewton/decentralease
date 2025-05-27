@@ -13,7 +13,7 @@ import {
   Copy,
 } from "@deemlol/next-icons";
 
-import Layout from "../../../components/Layout";
+import Layout from "../../../components/LesseeLayout";
 import styles from "../../styles/Profile.module.css";
 import EditProfileModal from "../../../components/EditProfileModal";
 
@@ -51,7 +51,12 @@ export default function Profile() {
   const [switchLoading, setSwitchLoading] = useState(false);
 
   // Save profile changes
-  const handleSaveProfile = async (data: { name: string; email: string; phone: string; location: string }) => {
+  const handleSaveProfile = async (data: {
+    name: string;
+    email: string;
+    phone: string;
+    location: string;
+  }) => {
     if (!address) return;
     setEditLoading(true);
     const { error } = await supabase
@@ -94,41 +99,42 @@ export default function Profile() {
 
   // Copy wallet address to clipboard
   const handleCopyAddress = () => {
-  if (!address) return;
+    if (!address) return;
 
-  // Modern clipboard API
-  if (
-    typeof navigator !== "undefined" &&
-    navigator.clipboard &&
-    typeof navigator.clipboard.writeText === "function"
-  ) {
-    navigator.clipboard.writeText(address)
-      .then(() => {
+    // Modern clipboard API
+    if (
+      typeof navigator !== "undefined" &&
+      navigator.clipboard &&
+      typeof navigator.clipboard.writeText === "function"
+    ) {
+      navigator.clipboard
+        .writeText(address)
+        .then(() => {
+          setCopyStatus("Copied to clipboard!");
+          setTimeout(() => setCopyStatus(null), 1500);
+        })
+        .catch(() => {
+          setCopyStatus("Failed to copy.");
+          setTimeout(() => setCopyStatus(null), 1500);
+        });
+    } else {
+      // Fallback for older browsers (including iOS Safari)
+      try {
+        const textarea = document.createElement("textarea");
+        textarea.value = address;
+        textarea.style.position = "fixed"; // Prevent scrolling to bottom of page in MS Edge.
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
         setCopyStatus("Copied to clipboard!");
-        setTimeout(() => setCopyStatus(null), 1500);
-      })
-      .catch(() => {
+      } catch {
         setCopyStatus("Failed to copy.");
-        setTimeout(() => setCopyStatus(null), 1500);
-      });
-  } else {
-    // Fallback for older browsers (including iOS Safari)
-    try {
-      const textarea = document.createElement("textarea");
-      textarea.value = address;
-      textarea.style.position = "fixed"; // Prevent scrolling to bottom of page in MS Edge.
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
-      setCopyStatus("Copied to clipboard!");
-    } catch {
-      setCopyStatus("Failed to copy.");
+      }
+      setTimeout(() => setCopyStatus(null), 1500);
     }
-    setTimeout(() => setCopyStatus(null), 1500);
-  }
-};
+  };
 
   // Fetch categories for dropdown
   useEffect(() => {
@@ -295,6 +301,21 @@ export default function Profile() {
     }
   };
 
+  const handleSwitchToLessor = async () => {
+    if (address) {
+      setSwitchLoading(true);
+      // Update is_lessor to true in users table
+      await supabase
+        .from("users")
+        .update({ is_lessor: true })
+        .eq("wallet_address", address);
+      setTimeout(() => {
+        setSwitchLoading(false);
+        router.push("/Lessor/Home");
+      }, 700);
+    }
+  };
+
   return (
     <Layout>
       <div className={styles.igProfileContainer}>
@@ -308,7 +329,9 @@ export default function Profile() {
         {switchLoading && (
           <div className={styles.switchLoaderOverlay}>
             <div className={styles.switchLoader}></div>
-            <span className={styles.switchLoaderText}>Switching to lessor...</span>
+            <span className={styles.switchLoaderText}>
+              Switching to lessor...
+            </span>
           </div>
         )}
         {address && (
@@ -343,7 +366,8 @@ export default function Profile() {
               aria-label="Open menu"
               role="button"
               onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") setShowMenuOptions((v) => !v);
+                if (e.key === "Enter" || e.key === " ")
+                  setShowMenuOptions((v) => !v);
               }}
             >
               <Menu size={28} color="#1976d2" />
@@ -367,7 +391,7 @@ export default function Profile() {
                     className={styles.menuDropdownItem}
                     onClick={() => {
                       setShowMenuOptions(false);
-                      setShowEditModal(true);                     
+                      setShowEditModal(true);
                     }}
                   >
                     Edit Profile
@@ -385,11 +409,7 @@ export default function Profile() {
                     className={styles.menuDropdownItem}
                     onClick={() => {
                       setShowMenuOptions(false);
-                      setSwitchLoading(true);
-                      setTimeout(() => {
-                        setSwitchLoading(false);
-                        router.push("/Lessor/Home");
-                      }, 700); 
+                      handleSwitchToLessor();
                     }}
                   >
                     Switch to lessor
