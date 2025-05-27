@@ -17,6 +17,8 @@ export default function Profile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState<string>("Username");
   const [iconSize, setIconSize] = useState(28);
+  const [postImages, setPostImages] = useState<string[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     // Set icon size based on window width (client-side only)
@@ -34,37 +36,46 @@ export default function Profile() {
       if (!address) return;
       const { data, error } = await supabase
         .from("users")
-        .select("profile_image_url, name")
+        .select("id, profile_image_url, name")
         .eq("wallet_address", address)
         .single();
       if (!error) {
         setAvatarUrl(data?.profile_image_url || null);
         setName(data?.name || "Username");
+        setUserId(data.id);
       } else {
         setAvatarUrl(null);
         setName("Username");
+        setUserId(null);
       }
     };
     fetchProfile();
   }, [address]);
 
+  // Fetch post images for the connected user using userId
+  useEffect(() => {
+    const fetchPosts = async () => {
+      if (!userId) return;
+      const { data, error } = await supabase
+        .from("posts")
+        .select("image_url")
+        .eq("user_id", userId);
+      if (!error && Array.isArray(data)) {
+        setPostImages(data.map((post) => post.image_url).filter(Boolean));
+      } else {
+        setPostImages([]);
+      }
+    };
+    fetchPosts();
+  }, [userId]);
+
   // Mock profile data for demonstration
   const profile = {
     username: name,
-    bio: "Web3 enthusiast. Lessee at Decentralease.",
-    posts: 8,
-    followers: 340,
-    following: 180,
-    postImages: [
-      "/mock1.jpg",
-      "/mock2.jpg",
-      "/mock3.jpg",
-      "/mock4.jpg",
-      "/mock5.jpg",
-      "/mock6.jpg",
-      "/mock7.jpg",
-      "/mock8.jpg",
-    ],
+    posts: postImages.length,
+    // followers: 340,
+    // following: 180,
+    postImages,
   };
 
   const handleDisconnect = async () => {
@@ -186,14 +197,13 @@ export default function Profile() {
               <span>
                 <strong>{profile.posts}</strong> posts
               </span>
-              <span>
+              {/* <span>
                 <strong>{profile.followers}</strong> followers
               </span>
               <span>
                 <strong>{profile.following}</strong> following
-              </span>
+              </span> */}
             </div>
-            <p className={styles.igBio}>{profile.bio}</p>
             {address && (
               <button
                 className={styles.disconnectButton}
