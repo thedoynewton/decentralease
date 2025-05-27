@@ -48,6 +48,7 @@ export default function Profile() {
   const [showMenuOptions, setShowMenuOptions] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
+  const [switchLoading, setSwitchLoading] = useState(false);
 
   // Save profile changes
   const handleSaveProfile = async (data: { name: string; email: string; phone: string; location: string }) => {
@@ -304,6 +305,12 @@ export default function Profile() {
           onSave={handleSaveProfile}
           loading={editLoading}
         />
+        {switchLoading && (
+          <div className={styles.switchLoaderOverlay}>
+            <div className={styles.switchLoader}></div>
+            <span className={styles.switchLoaderText}>Switching to lessor...</span>
+          </div>
+        )}
         {address && (
           <div className={styles.walletRow}>
             <div className={styles.walletAddress}>
@@ -335,7 +342,7 @@ export default function Profile() {
               tabIndex={0}
               aria-label="Open menu"
               role="button"
-              onKeyPress={(e) => {
+              onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") setShowMenuOptions((v) => !v);
               }}
             >
@@ -378,8 +385,11 @@ export default function Profile() {
                     className={styles.menuDropdownItem}
                     onClick={() => {
                       setShowMenuOptions(false);
-                      // Add your switch to lessor logic here
-                      setStatus("Switch to lessor clicked!"); // Example
+                      setSwitchLoading(true);
+                      setTimeout(() => {
+                        setSwitchLoading(false);
+                        router.push("/Lessor/Home");
+                      }, 700); 
                     }}
                   >
                     Switch to lessor
