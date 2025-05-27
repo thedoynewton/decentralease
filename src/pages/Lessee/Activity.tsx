@@ -2,24 +2,17 @@
 import { useCallback, useEffect, useState } from "react";
 import Layout from "../../../components/Layout";
 import styles from "../../styles/LesseeActivity.module.css";
-import { createClient } from "@supabase/supabase-js";
 import { useAccount } from "wagmi";
+import { supabase } from "../../../supabase/supabase-client";
 
-// Initialize Supabase
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// It's good practice to list statuses consistently, e.g., lowercase for DB, capitalized for display
-const STATUS_TABS = ["pending", "approved", "paid", "completed"]; // Added 'cancelled' to tabs
+const STATUS_TABS = ["pending", "approved", "paid", "completed"];
 
 export default function Activity() {
   const { address } = useAccount();
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("pending"); // Default to 'pending'
+  const [activeTab, setActiveTab] = useState("pending");
 
-  // Refactored fetch logic into a useCallback for better reusability
   const fetchUserBookings = useCallback(async () => {
     if (!address) {
       setBookings([]);
@@ -36,7 +29,6 @@ export default function Activity() {
         .single();
 
       if (userError || !user) {
-        console.error("User lookup failed:", userError?.message || "User not found");
         setBookings([]);
         setLoading(false);
         return;
@@ -55,50 +47,65 @@ export default function Activity() {
           )
         `
         )
-        .eq("lessee_id", user.id); // Filter by lessee_id
+        .eq("lessee_id", user.id);
 
       if (bookingsError) {
-        console.error("Booking fetch error:", bookingsError);
         setBookings([]);
       } else {
         setBookings(bookingsData || []);
       }
     } catch (error: any) {
-      console.error("Unexpected error fetching bookings:", error.message);
       setBookings([]);
     } finally {
       setLoading(false);
     }
-  }, [address]); // Depend on address
+  }, [address]);
 
   useEffect(() => {
     fetchUserBookings();
-  }, [fetchUserBookings]); // Re-fetch when fetchUserBookings changes (due to address)
-
-
-  const handleCancelBooking = useCallback(async (bookingId: string) => {
-    if (window.confirm("Are you sure you want to cancel this booking?")) {
-      try {
-        const { error } = await supabase
-          .from("bookings")
-          .update({ status: "cancelled" }) // Set status to 'cancelled'
-          .eq("id", bookingId); // Update the specific booking
-
-        if (error) {
-          console.error("Error cancelling booking:", error);
-          alert(`Failed to cancel booking: ${error.message}`);
-        } else {
-          alert("Booking cancelled successfully!");
-          // Re-fetch bookings to update the UI
-          fetchUserBookings();
-        }
-      } catch (error: any) {
-        console.error("Unexpected error during cancellation:", error);
-        alert(`An error occurred: ${error.message}`);
-      }
-    }
   }, [fetchUserBookings]);
 
+  const handleCancelBooking = useCallback(
+    async (bookingId: string) => {
+      if (window.confirm("Are you sure you want to cancel this booking?")) {
+        try {
+          const { error } = await supabase
+            .from("bookings")
+            .update({ status: "cancelled" })
+            .eq("id", bookingId);
+
+          if (error) {
+            alert(`Failed to cancel booking: ${error.message}`);
+          } else {
+            alert("Booking cancelled successfully!");
+            fetchUserBookings();
+          }
+        } catch (error: any) {
+          alert(`An error occurred: ${error.message}`);
+        }
+      }
+    },
+    [fetchUserBookings]
+  );
+
+  // Pay Now handler for approved bookings
+  const handlePayNow = useCallback(
+    async (bookingId: string) => {
+      alert("Payment done");
+      // Update status to 'paid'
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "paid" })
+        .eq("id", bookingId);
+
+      if (error) {
+        alert(`Failed to update payment status: ${error.message}`);
+      } else {
+        fetchUserBookings();
+      }
+    },
+    [fetchUserBookings]
+  );
 
   const filteredBookings = bookings.filter(
     (b) => b.status.toLowerCase() === activeTab.toLowerCase()
@@ -125,7 +132,9 @@ export default function Activity() {
         </div>
 
         <div className={styles.infoBox}>
-          <strong>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Bookings</strong>
+          <strong>
+            {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Bookings
+          </strong>
           {loading ? (
             <p>Loading...</p>
           ) : filteredBookings.length === 0 ? (
@@ -133,26 +142,34 @@ export default function Activity() {
           ) : (
             <ul>
               {filteredBookings.map((booking) => (
-                <li key={booking.id} className={styles.bookingItem}> {/* Added className for potential styling */}
+                <li key={booking.id} className={styles.bookingItem}>
                   {booking.listing_id?.image_url && (
-                    // Using Next.js Image component for optimization
                     <img
                       src={booking.listing_id.image_url}
                       alt={booking.listing_id.title}
-                      className={styles.bookingImage} // Added className for potential styling
+                      className={styles.bookingImage}
                     />
                   )}
-                  <div className={styles.bookingDetails}> {/* Added className for potential styling */}
+                  <div className={styles.bookingDetails}>
                     <strong>{booking.listing_id?.title}</strong>
                     <div>Total Amount: {booking.total_amount} ETH</div>
                   </div>
-                  {activeTab === "pending" && ( // Only show cancel for 'pending' bookings
+                  {activeTab === "pending" && (
                     <button
                       onClick={() => handleCancelBooking(booking.id)}
                       className={styles.cancelButton}
-                      disabled={loading} // Disable button during loading
+                      disabled={loading}
                     >
                       Cancel Booking
+                    </button>
+                  )}
+                  {activeTab === "approved" && (
+                    <button
+                      onClick={() => handlePayNow(booking.id)}
+                      className={styles.payButton}
+                      disabled={loading}
+                    >
+                      Pay Now
                     </button>
                   )}
                 </li>

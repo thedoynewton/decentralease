@@ -130,6 +130,26 @@
   color: #7f8c8d;
 }
 
+.payButton {
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1.1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-left: 1rem;
+  transition: background 0.15s;
+}
+.payButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.payButton:hover:not(:disabled) {
+  background: #1251a3;
+}
+
 /* --- Responsive Adjustments for Mobile Devices --- */
 
 /* Small devices (phones, 600px and down) */
