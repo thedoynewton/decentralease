@@ -150,6 +150,13 @@
   background: #1251a3;
 }
 
+.inUseText {
+  color: #43a047;
+  font-weight: 600;
+  margin-left: 1rem;
+  font-size: 1rem;
+}
+
 /* --- Responsive Adjustments for Mobile Devices --- */
 
 /* Small devices (phones, 600px and down) */
