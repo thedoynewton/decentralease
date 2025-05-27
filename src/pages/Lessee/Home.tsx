@@ -2,7 +2,7 @@ import { useAccount } from "wagmi";
 import { useRouter } from "next/router";
 import { supabase } from "../../../supabase/supabase-client";
 import { useState, useEffect, useRef } from "react";
-import styles from "../../styles/LesseeHome.module.css"; // Use LessorHome styles!
+import styles from "../../styles/LesseeHome.module.css";
 import Layout from "../../../components/LesseeLayout";
 import Link from "next/link";
 import { Search, Bell, Filter } from "@deemlol/next-icons";
