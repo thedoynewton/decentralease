@@ -1,0 +1,171 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 2rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 1rem;
+}
+
+.tab {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #f7fafc;
+  color: #4a5568;
+}
+
+.tab:hover {
+  background: #edf2f7;
+}
+
+.tab.active {
+  background: #0070f3;
+  color: white;
+}
+
+.loading,
+.empty {
+  text-align: center;
+  padding: 3rem;
+  background: #f7fafc;
+  border-radius: 12px;
+  color: #4a5568;
+}
+
+.bookingsList {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.bookingCard {
+  display: flex;
+  gap: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.bookingCard:hover {
+  transform: translateY(-2px);
+}
+
+.bookingImage {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+}
+
+.bookingInfo {
+  flex: 1;
+  padding: 1.5rem;
+}
+
+.bookingTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+}
+
+.bookingCategory {
+  color: #718096;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.bookingDates {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  color: #4a5568;
+  font-size: 0.875rem;
+}
+
+.bookingAmount {
+  font-weight: 600;
+  color: #3182ce;
+  margin-bottom: 1rem;
+}
+
+.lesseInfo {
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.lesseeWallet {
+  color: #718096;
+  font-family: monospace;
+}
+
+.transactionHash {
+  font-family: monospace;
+  color: #718096;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.status {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.status.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status.approved {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.status.paid {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .tabs {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .bookingCard {
+    flex-direction: column;
+  }
+
+  .bookingImage {
+    width: 100%;
+    height: 200px;
+  }
+
+  .bookingDates {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+} 

@@ -1,0 +1,151 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 2rem;
+}
+
+.form {
+  display: grid;
+  gap: 2rem;
+}
+
+.section {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 1.5rem;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup:last-child {
+  margin-bottom: 0;
+}
+
+.formGroup label {
+  display: block;
+  font-weight: 500;
+  color: #4a5568;
+  margin-bottom: 0.5rem;
+}
+
+.formGroup input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.formGroup input:focus {
+  outline: none;
+  border-color: #0070f3;
+  box-shadow: 0 0 0 2px rgba(0, 112, 243, 0.1);
+}
+
+.checkboxGroup {
+  margin-bottom: 1rem;
+}
+
+.checkboxGroup:last-child {
+  margin-bottom: 0;
+}
+
+.checkboxGroup label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #4a5568;
+  cursor: pointer;
+}
+
+.checkboxGroup input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.error {
+  padding: 1rem;
+  background: #fed7d7;
+  border: 1px solid #fc8181;
+  color: #c53030;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.success {
+  padding: 1rem;
+  background: #c6f6d5;
+  border: 1px solid #68d391;
+  color: #276749;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.saveButton {
+  width: 100%;
+  padding: 1rem;
+  background: #0070f3;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.saveButton:hover:not(:disabled) {
+  background: #0051cc;
+}
+
+.saveButton:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  background: #f7fafc;
+  border-radius: 12px;
+  color: #4a5568;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .section {
+    padding: 1.5rem;
+  }
+
+  .formGroup {
+    margin-bottom: 1rem;
+  }
+
+  .checkboxGroup {
+    margin-bottom: 0.75rem;
+  }
+} 

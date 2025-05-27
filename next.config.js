@@ -7,6 +7,12 @@ const withPWA = require('next-pwa')({
 
 const nextConfig = {
   reactStrictMode: true,
+  images: {
+    domains: [
+      'xgvbbohngdhwsjvrcbrh.supabase.co',
+      'xgvbbohngdhwsjvrcbrh.supabase.co'
+    ],
+  },
   webpack: (config) => {
     config.externals.push('pino-pretty', 'lokijs', 'encoding');
     return config;

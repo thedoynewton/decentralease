@@ -1,4 +1,5 @@
 import styles from "../src/styles/BookingSummary.module.css";
+import React from "react";
 
 interface Booking {
   id: string;

@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { useAccount } from "wagmi";
+import { supabase } from "../supabase/supabase-client";
 import styles from "../src/styles/Layout.module.css"; // Assuming this path
 
 // Define a type for your navigation items for better type safety
@@ -11,41 +14,78 @@ interface NavItem {
   isSpacer?: boolean; // New property to identify the spacer
 }
 
-const navItems: NavItem[] = [
-  { label: "Marketplace", href: "/Lessee/Home", icon: "🛒" },
-  { label: "Activity", href: "/Lessee/Activity", icon: "📊" },
-  { label: "Inbox", href: "/Lessee/Inbox", icon: "✉️" },
-  { label: "Profile", href: "/Lessee/Profile", icon: "👤" },
-];
-
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const { address } = useAccount();
+  const [isLessor, setIsLessor] = useState(false);
 
-  // Define the Create Post button
+  useEffect(() => {
+    async function checkUserRole() {
+      if (!address) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('is_lessor')
+          .eq('wallet_address', address.toLowerCase())
+          .single();
+        
+        if (error) throw error;
+        setIsLessor(data?.is_lessor ?? false);
+      } catch (err) {
+        console.error('Error checking user role:', err);
+      }
+    }
+
+    checkUserRole();
+  }, [address]);
+
+  const navItems: NavItem[] = [
+    { 
+      label: "Marketplace", 
+      href: isLessor ? "/Lessor/Home" : "/Lessee/Home", 
+      icon: "🛒" 
+    },
+    { 
+      label: "Activity", 
+      href: isLessor ? "/Lessor/Activity" : "/Lessee/Activity", 
+      icon: "📊" 
+    },
+    { 
+      label: "Inbox", 
+      href: isLessor ? "/Lessor/Inbox" : "/Lessee/Inbox", 
+      icon: "✉️" 
+    },
+    { 
+      label: "Profile", 
+      href: isLessor ? "/Lessor/Profile" : "/Lessee/Profile", 
+      icon: "👤" 
+    },
+  ];
+
+  // Define the Create Post button based on role
   const createPostButton: NavItem = {
-    label: "Create", // Label for potential future use or accessibility
-    href: "/Lessee/LesseePost", // The page you just made 
+    label: "Create",
+    href: isLessor ? "/Lessor/LessorPost" : "/Lessee/LesseePost",
     icon: "+",
     isCreateButton: true,
   };
 
   // Define a spacer element
   const spacer: NavItem = {
-    label: "", // Spacers don't have labels
-    href: "#", // No actual link
-    icon: "", // No icon
+    label: "",
+    href: "#",
+    icon: "",
     isSpacer: true,
   };
 
   // Combine nav items with the create button and spacers for the tabbar
-  // The goal is to place the FAB visually in the center,
-  // while using invisible spacers to maintain the flexbox distribution.
   const tabbarItems = [
-    navItems[0], // Marketplace
-    navItems[1], // Activity
-    spacer, // Spacer to push the FAB to the right
-    navItems[2], // Inbox
-    navItems[3], // Profile
+    navItems[0],
+    navItems[1],
+    spacer,
+    navItems[2],
+    navItems[3],
   ];
 
   return (
@@ -97,7 +137,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         ))}
         {/* The actual create post button is floated above the tabbar */}
         <Link href={createPostButton.href} className={styles.createPostButton}>
-            <span className={styles.icon}>{createPostButton.icon}</span>
+          <span className={styles.icon}>{createPostButton.icon}</span>
         </Link>
       </div>
     </div>

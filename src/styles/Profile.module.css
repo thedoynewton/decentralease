@@ -1,0 +1,110 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #718096;
+  font-size: 0.875rem;
+  margin-bottom: 2rem;
+}
+
+.address {
+  font-family: monospace;
+  color: #4a5568;
+  background: #edf2f7;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.switchSection {
+  margin: 2rem 0;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 1rem;
+}
+
+.switchButton {
+  width: 100%;
+  max-width: 400px;
+  padding: 1rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.switchButton.lessor {
+  background: #4299e1;
+  color: white;
+}
+
+.switchButton.lessor:hover {
+  background: #3182ce;
+}
+
+.switchButton.lessee {
+  background: #9f7aea;
+  color: white;
+}
+
+.switchButton.lessee:hover {
+  background: #805ad5;
+}
+
+.disconnectButton {
+  width: 100%;
+  max-width: 400px;
+  padding: 1rem;
+  margin-top: 1rem;
+  background: #fff5f5;
+  color: #e53e3e;
+  border: 1px solid #feb2b2;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.disconnectButton:hover {
+  background: #fed7d7;
+  border-color: #fc8181;
+}
+
+.status {
+  margin-top: 1rem;
+  padding: 1rem;
+  text-align: center;
+  border-radius: 8px;
+  background: #e6fffa;
+  color: #2c7a7b;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .title {
+    font-size: 1.25rem;
+  }
+
+  .switchButton,
+  .disconnectButton {
+    padding: 0.75rem;
+  }
+} 

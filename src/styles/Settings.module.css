@@ -1,0 +1,225 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.loading,
+.error {
+  text-align: center;
+  padding: 3rem;
+  background: #f7fafc;
+  border-radius: 12px;
+  margin: 2rem 0;
+}
+
+.error {
+  color: #e53e3e;
+  background: #fed7d7;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: #4a5568;
+  transition: color 0.2s;
+}
+
+.backButton:hover {
+  color: #2d3748;
+}
+
+.headerTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.verifyButton {
+  padding: 0.5rem 1rem;
+  background: #ebf8ff;
+  color: #3182ce;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.verifyButton:hover {
+  background: #bee3f8;
+}
+
+.profileSection {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.imageContainer {
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e2e8f0;
+}
+
+.profileImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profileImagePlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #4a5568;
+  background: #e2e8f0;
+}
+
+.name {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+}
+
+.username {
+  color: #718096;
+  font-size: 0.875rem;
+}
+
+.menuSection {
+  margin-bottom: 2rem;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 1rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.menuItem:hover {
+  background: #f7fafc;
+  border-color: #cbd5e0;
+}
+
+.menuIcon {
+  color: #4a5568;
+  margin-right: 1rem;
+}
+
+.walletAddress {
+  font-family: monospace;
+  color: #4a5568;
+  flex: 1;
+}
+
+.copyIcon {
+  color: #4a5568;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.menuItem:hover .copyIcon {
+  opacity: 1;
+}
+
+.switchSection {
+  margin-bottom: 2rem;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 1rem;
+}
+
+.switchButton {
+  width: 100%;
+  padding: 1rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.switchButton.lessor {
+  background: #9f7aea;
+  color: white;
+}
+
+.switchButton.lessor:hover {
+  background: #805ad5;
+}
+
+.switchButton.lessee {
+  background: #4299e1;
+  color: white;
+}
+
+.switchButton.lessee:hover {
+  background: #3182ce;
+}
+
+.logoutButton {
+  width: 100%;
+  padding: 1rem;
+  background: #fff5f5;
+  color: #e53e3e;
+  border: 1px solid #feb2b2;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logoutButton:hover {
+  background: #fed7d7;
+  border-color: #fc8181;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .header {
+    margin-bottom: 1.5rem;
+  }
+
+  .headerTitle {
+    font-size: 1.25rem;
+  }
+
+  .name {
+    font-size: 1.25rem;
+  }
+
+  .menuItem {
+    padding: 0.75rem;
+  }
+} 
