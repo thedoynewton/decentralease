@@ -45,6 +45,26 @@ export default function LessorHome() {
   const [hasMore, setHasMore] = useState(true);
   const loaderRef = useRef<HTMLDivElement>(null);
 
+  // User id state
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Fetch user id for the connected wallet
+  useEffect(() => {
+    const fetchUserId = async () => {
+      if (!address) {
+        setUserId(null);
+        return;
+      }
+      const { data } = await supabase
+        .from("users")
+        .select("id")
+        .eq("wallet_address", address)
+        .single();
+      setUserId(data?.id ?? null);
+    };
+    fetchUserId();
+  }, [address]);
+
   // Fetch categories for filter dropdown
   useEffect(() => {
     const fetchCategories = async () => {
@@ -54,7 +74,7 @@ export default function LessorHome() {
     fetchCategories();
   }, []);
 
-  // Fetch posts with pagination and filter/search
+  // Fetch posts with pagination and filter/search, EXCLUDE user's own posts
   const fetchPosts = async (pageNum: number) => {
     setLoading(true);
     const from = (pageNum - 1) * PAGE_SIZE;
@@ -66,6 +86,11 @@ export default function LessorHome() {
       )
       .order("created_at", { ascending: false })
       .range(from, to);
+
+    // Exclude connected user's own posts
+    if (userId) {
+      query = query.neq("user_id", userId);
+    }
 
     if (selectedCategory) {
       query = query.eq("category_id", selectedCategory);
@@ -100,12 +125,12 @@ export default function LessorHome() {
   useEffect(() => {
     setPage(1);
     setPosts([]);
-  }, [selectedCategory, search]);
+  }, [selectedCategory, search, userId]);
 
   useEffect(() => {
     fetchPosts(page);
     // eslint-disable-next-line
-  }, [page, selectedCategory, search]);
+  }, [page, selectedCategory, search, userId]);
 
   // Infinite scroll observer
   useEffect(() => {
