@@ -218,7 +218,7 @@ export default function Inbox() {
           {isConnected &&
             !loading &&
             !error &&
-            approvedBookings.length === 0 && <p>No bookings request yet.</p>}
+            approvedBookings.length === 0 && <p>No booking requests yet.</p>}
           <ul className={styles.bookingList}>
             {approvedBookings.map((booking) => (
               <li

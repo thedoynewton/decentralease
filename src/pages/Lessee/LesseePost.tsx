@@ -14,7 +14,6 @@ import { useAccount } from "wagmi";
 // Import the CSS module
 import styles from "../../styles/LesseePost.module.css";
 import { supabase } from "../../../supabase/supabase-client";
-import Layout from "../../../components/LesseeLayout";
 
 // Add a debounce utility function
 // This helps to limit API calls as the user types
@@ -429,7 +428,6 @@ export default function LesseePost() {
   // --- END: Location Search Functionality ---
 
   return (
-    <Layout>
       <div className={styles.container}>
         <div className={styles.header}>
           <button onClick={handleGoBack} className={styles.backButton}>
@@ -652,6 +650,5 @@ export default function LesseePost() {
           )}
         </form>
       </div>
-    </Layout>
   );
 }

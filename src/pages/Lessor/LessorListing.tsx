@@ -4,7 +4,6 @@ import { useRouter } from "next/router";
 import { useAccount } from "wagmi";
 import styles from "../../styles/LessorListing.module.css";
 import { supabase } from "../../../supabase/supabase-client";
-import Layout from "../../../components/LessorLayout";
 
 interface Category {
   id: number;
@@ -164,7 +163,6 @@ export default function LessorListing() {
   };
 
   return (
-    <Layout>
       <div className={styles.container}>
         <div className={styles.header}>
           <button onClick={handleBack} className={styles.backButton}>
@@ -334,6 +332,5 @@ export default function LessorListing() {
           </button>
         </form>
       </div>
-    </Layout>
   );
 }
