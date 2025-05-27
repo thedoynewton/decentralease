@@ -1,0 +1,172 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.activityList {
+  display: grid;
+  gap: 1rem;
+}
+
+.activityItem {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.activityItem:hover {
+  transform: translateY(-2px);
+}
+
+.activityHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.activityInfo {
+  flex: 1;
+}
+
+.activityType {
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.25rem;
+}
+
+.timestamp {
+  font-size: 0.875rem;
+  color: #718096;
+}
+
+.status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.statusPending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.statusCompleted {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.statusCancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.activityContent {
+  color: #4a5568;
+  line-height: 1.5;
+}
+
+.activityMeta {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #718096;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.actionButton {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.acceptButton {
+  background: #4299e1;
+  color: white;
+  border: none;
+}
+
+.acceptButton:hover {
+  background: #3182ce;
+}
+
+.rejectButton {
+  background: #fff5f5;
+  color: #e53e3e;
+  border: 1px solid #feb2b2;
+}
+
+.rejectButton:hover {
+  background: #fed7d7;
+  border-color: #fc8181;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: #4a5568;
+}
+
+.error {
+  text-align: center;
+  padding: 3rem;
+  color: #e53e3e;
+}
+
+.empty {
+  text-align: center;
+  padding: 3rem;
+  color: #718096;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .activityItem {
+    padding: 1rem;
+  }
+
+  .activityHeader {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .actionButtons {
+    flex-direction: column;
+  }
+
+  .actionButton {
+    width: 100%;
+    text-align: center;
+  }
+} 

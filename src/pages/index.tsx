@@ -1,7 +1,7 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import type { NextPage } from "next";
 import Head from "next/head";
-import styles from "../styles/Home.module.css";
+import styles from "../styles/LessorHome.module.css";
 import { SignMessage } from "../../components/SignMessage";
 import { useAccount } from "wagmi";
 import { useRouter } from "next/router";
@@ -57,12 +57,15 @@ const Home: NextPage = () => {
       </Head>
 
       <main className={styles.main}>
-        <ConnectButton />
-        {address && <SignMessage />}
         <h1 className={styles.title}>
-          Welcome to{" "}
-          <a href="https://decentralease.vercel.app/">Decentralease</a>
+          Welcome to Decentralease
         </h1>
+
+        <div className={styles.connect}>
+          <ConnectButton />
+        </div>
+
+        {address && <SignMessage />}
       </main>
 
       <footer className={styles.footer}>

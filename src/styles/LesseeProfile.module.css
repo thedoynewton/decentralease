@@ -1,0 +1,121 @@
+.container {
+  max-width: 100%;
+  min-height: 100vh;
+  background: #fff;
+  padding: 1rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+}
+
+.backButton,
+.menuButton {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: #1a1a1a;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.profileCard {
+  background: #4F46E5;
+  border-radius: 16px;
+  padding: 2rem;
+  margin: 1rem 0;
+  text-align: center;
+  color: white;
+}
+
+.profileImage {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin: 0 auto 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.userName {
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.userHandle {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.menuList {
+  margin: 1.5rem 0;
+}
+
+.menuItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #edf2f7;
+  text-align: left;
+  font-size: 1rem;
+  color: #1a1a1a;
+  cursor: pointer;
+}
+
+.menuItem:last-child {
+  border-bottom: none;
+}
+
+.menuIcon {
+  margin-right: 0.75rem;
+  color: #4a5568;
+}
+
+.walletAddress {
+  font-family: monospace;
+  color: #4a5568;
+}
+
+.accountActions {
+  margin-top: 2rem;
+}
+
+.switchButton {
+  width: 100%;
+  background: #4F46E5;
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.logoutButton {
+  width: 100%;
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+} 
