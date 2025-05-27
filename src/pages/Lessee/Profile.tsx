@@ -15,20 +15,34 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false);
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [name, setName] = useState<string>("Username");
+  const [iconSize, setIconSize] = useState(28);
 
-  // Fetch avatar from Supabase
+  useEffect(() => {
+    // Set icon size based on window width (client-side only)
+    const handleResize = () => {
+      setIconSize(window.innerWidth <= 600 ? 20 : 28);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  /// Fetch avatar and name from Supabase
   useEffect(() => {
     const fetchProfile = async () => {
       if (!address) return;
       const { data, error } = await supabase
         .from("users")
-        .select("profile_image_url")
+        .select("profile_image_url, name")
         .eq("wallet_address", address)
         .single();
-      if (!error && data?.profile_image_url) {
-        setAvatarUrl(data.profile_image_url);
+      if (!error) {
+        setAvatarUrl(data?.profile_image_url || null);
+        setName(data?.name || "Username");
       } else {
         setAvatarUrl(null);
+        setName("Username");
       }
     };
     fetchProfile();
@@ -36,15 +50,20 @@ export default function Profile() {
 
   // Mock profile data for demonstration
   const profile = {
-    username: address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "Username",
+    username: name,
     bio: "Web3 enthusiast. Lessee at Decentralease.",
     posts: 8,
     followers: 340,
     following: 180,
     postImages: [
-      "/mock1.jpg", "/mock2.jpg", "/mock3.jpg",
-      "/mock4.jpg", "/mock5.jpg", "/mock6.jpg",
-      "/mock7.jpg", "/mock8.jpg"
+      "/mock1.jpg",
+      "/mock2.jpg",
+      "/mock3.jpg",
+      "/mock4.jpg",
+      "/mock5.jpg",
+      "/mock6.jpg",
+      "/mock7.jpg",
+      "/mock8.jpg",
     ],
   };
 
@@ -66,7 +85,7 @@ export default function Profile() {
     if (!file || !address) return;
     setUploading(true);
 
-    const fileExt = file.name.split('.').pop();
+    const fileExt = file.name.split(".").pop();
     const filePath = `${address}.${fileExt}`;
 
     // Upload to Supabase Storage
@@ -81,8 +100,7 @@ export default function Profile() {
     }
 
     // Get public URL
-    const { data: publicUrlData } = supabase
-      .storage
+    const { data: publicUrlData } = supabase.storage
       .from("profile-images")
       .getPublicUrl(filePath);
 
@@ -131,7 +149,7 @@ export default function Profile() {
               background: "#f5f5f5",
               position: "relative",
               cursor: uploading ? "not-allowed" : "pointer",
-              opacity: uploading ? 0.6 : 1
+              opacity: uploading ? 0.6 : 1,
             }}
             onClick={handleAvatarClick}
             title={uploading ? "Uploading..." : "Change profile photo"}
@@ -140,26 +158,18 @@ export default function Profile() {
               <img
                 src={avatarUrl}
                 alt="Profile"
-                style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                }}
               />
             ) : (
               <User size={80} color="#bbb" />
             )}
-            <span
-              style={{
-                position: "absolute",
-                bottom: 8,
-                right: 8,
-                background: "#fff",
-                borderRadius: "50%",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
-                padding: 2,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}
-            >
-              <PlusCircle size={28} color="#1976d2" />
+            <span className={styles.plusIconWrapper}>
+              <PlusCircle size={iconSize} color="#1976d2" />
             </span>
             <input
               type="file"
@@ -173,9 +183,15 @@ export default function Profile() {
           <div className={styles.igProfileInfo}>
             <h2 className={styles.igUsername}>{profile.username}</h2>
             <div className={styles.igStats}>
-              <span><strong>{profile.posts}</strong> posts</span>
-              <span><strong>{profile.followers}</strong> followers</span>
-              <span><strong>{profile.following}</strong> following</span>
+              <span>
+                <strong>{profile.posts}</strong> posts
+              </span>
+              <span>
+                <strong>{profile.followers}</strong> followers
+              </span>
+              <span>
+                <strong>{profile.following}</strong> following
+              </span>
             </div>
             <p className={styles.igBio}>{profile.bio}</p>
             {address && (
@@ -200,4 +216,4 @@ export default function Profile() {
       </div>
     </Layout>
   );
-} 
+}
