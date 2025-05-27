@@ -44,6 +44,21 @@ export default function Profile() {
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const [showMenuOptions, setShowMenuOptions] = useState(false);
+
+  // Close menu options when clicking outside
+  const menuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenuOptions(false);
+      }
+    }
+    if (showMenuOptions) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showMenuOptions]);
 
   // Copy wallet address to clipboard
   const handleCopyAddress = () => {
@@ -275,8 +290,65 @@ export default function Profile() {
                 <Copy size={18} color="#1976d2" />
               </span>
             </div>
-            <span className={styles.menuIconWrapper}>
+            <span
+              className={styles.menuIconWrapper}
+              onClick={() => setShowMenuOptions((v) => !v)}
+              style={{ position: "relative", cursor: "pointer" }}
+              tabIndex={0}
+              aria-label="Open menu"
+              role="button"
+              onKeyPress={(e) => {
+                if (e.key === "Enter" || e.key === " ") setShowMenuOptions((v) => !v);
+              }}
+            >
               <Menu size={28} color="#1976d2" />
+              {showMenuOptions && (
+                <div
+                  ref={menuRef}
+                  className={styles.menuDropdown}
+                  style={{
+                    position: "absolute",
+                    top: "120%",
+                    right: 0,
+                    background: "#fff",
+                    border: "1px solid #ccc",
+                    borderRadius: 8,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+                    minWidth: 160,
+                    zIndex: 100,
+                  }}
+                >
+                  <div
+                    className={styles.menuDropdownItem}
+                    onClick={() => {
+                      setShowMenuOptions(false);
+                      // Add your settings navigation here
+                      setStatus("Settings clicked!"); // Example
+                    }}
+                  >
+                    Settings
+                  </div>
+                  <div
+                    className={styles.menuDropdownItem}
+                    onClick={() => {
+                      setShowMenuOptions(false);
+                      handleDisconnect();
+                    }}
+                  >
+                    Disconnect
+                  </div>
+                  <div
+                    className={styles.menuDropdownItem}
+                    onClick={() => {
+                      setShowMenuOptions(false);
+                      // Add your switch to lessor logic here
+                      setStatus("Switch to lessor clicked!"); // Example
+                    }}
+                  >
+                    Switch to lessor
+                  </div>
+                </div>
+              )}
             </span>
           </div>
         )}
@@ -336,15 +408,6 @@ export default function Profile() {
                 <strong>{profile.posts}</strong> posts
               </span>
             </div>
-            {address && (
-              <button
-                className={styles.disconnectButton}
-                onClick={handleDisconnect}
-                disabled={uploading}
-              >
-                Disconnect Wallet
-              </button>
-            )}
             {status && <div className={styles.status}>{status}</div>}
           </div>
         </div>
