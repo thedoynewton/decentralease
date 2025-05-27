@@ -7,11 +7,19 @@
   padding: 2rem;
 }
 
+.mobileProfileNamePosts {
+  display: none;
+}
+
+.mobilePostsCount {
+  display: none;
+}
+
 .igProfileHeader {
   display: flex;
   align-items: center;
   gap: 2rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.2rem;
 }
 
 .igAvatar {
@@ -92,6 +100,28 @@
   justify-content: center;
 }
 
+.aboutSection {
+  margin-top: 1.2rem;
+  color: #444;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1.2em;
+}
+.aboutSection strong {
+  font-weight: 600;
+  margin-right: 0.3em;
+  color: #222;
+}
+.aboutSection div {
+  margin-bottom: 0.2em;
+}
+.aboutTitle {
+  font-size: 1.15rem;
+  margin-bottom: 0.4em;
+  font-weight: 700;
+  color: #222;
+}
+
 @media (max-width: 600px) {
   .igProfileContainer {
     padding: 1rem;
@@ -104,8 +134,8 @@
   }
 
   .igProfileHeader {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
     gap: 1rem;
   }
 
@@ -132,5 +162,30 @@
 
   .igPostItem img {
     border-radius: 4px;
+  }
+
+  .igProfileInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .mobileProfileNamePosts {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.5rem;
+  }
+
+  .mobilePostsCount {
+    display: block;
+    font-size: 1rem;
+    color: #555;
+    margin-top: 0.2rem;
+  }
+
+  /* Hide the stats row on mobile since we show posts count above */
+  .igStats {
+    display: none;
   }
 }

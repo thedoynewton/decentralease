@@ -2,7 +2,7 @@ import { useAccount, useDisconnect } from "wagmi";
 import { supabase } from "../../../supabase/supabase-client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import { User, PlusCircle } from "@deemlol/next-icons";
+import { User, PlusCircle, Email, Phone, MapPin } from "@deemlol/next-icons";
 
 import Layout from "../../../components/Layout";
 import styles from "../../styles/Profile.module.css";
@@ -19,6 +19,10 @@ export default function Profile() {
   const [iconSize, setIconSize] = useState(28);
   const [postImages, setPostImages] = useState<string[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [email, setEmail] = useState<string>("");
+  const [phone, setPhone] = useState<string>("");
+  const [location, setLocation] = useState<string>("");
+  
 
   useEffect(() => {
     // Set icon size based on window width (client-side only)
@@ -30,23 +34,29 @@ export default function Profile() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  /// Fetch avatar and name from Supabase
+   // Fetch avatar, name, and extra profile info from Supabase
   useEffect(() => {
     const fetchProfile = async () => {
       if (!address) return;
       const { data, error } = await supabase
         .from("users")
-        .select("id, profile_image_url, name")
+        .select("id, profile_image_url, name, email, phone, location")
         .eq("wallet_address", address)
         .single();
-      if (!error) {
+      if (!error && data) {
         setAvatarUrl(data?.profile_image_url || null);
         setName(data?.name || "Username");
         setUserId(data.id);
+        setEmail(data.email || "");
+        setPhone(data.phone || "");
+        setLocation(data.location || "");
       } else {
         setAvatarUrl(null);
         setName("Username");
         setUserId(null);
+        setEmail("");
+        setPhone("");
+        setLocation("");
       }
     };
     fetchProfile();
@@ -192,7 +202,12 @@ export default function Profile() {
             />
           </div>
           <div className={styles.igProfileInfo}>
-            <h2 className={styles.igUsername}>{profile.username}</h2>
+            <div className={styles.mobileProfileNamePosts}>
+              <h2 className={styles.igUsername}>{profile.username}</h2>
+              <span className={styles.mobilePostsCount}>
+                <strong>{profile.posts}</strong> posts
+              </span>
+            </div>
             <div className={styles.igStats}>
               <span>
                 <strong>{profile.posts}</strong> posts
@@ -203,7 +218,7 @@ export default function Profile() {
               <span>
                 <strong>{profile.following}</strong> following
               </span> */}
-            </div>
+            </div>           
             {address && (
               <button
                 className={styles.disconnectButton}
@@ -216,6 +231,21 @@ export default function Profile() {
             {status && <div className={styles.status}>{status}</div>}
           </div>
         </div>
+        <div className={styles.aboutSection}>
+              <h2 className={styles.aboutTitle}>About me</h2>
+              <div>
+                <Email size={18} style={{ verticalAlign: "middle", marginRight: 6 }} />
+                <span>{email || "—"}</span>
+              </div>
+              <div>
+                <Phone size={18} style={{ verticalAlign: "middle", marginRight: 6 }} />
+                <span>{phone || "—"}</span>
+              </div>
+              <div>
+                <MapPin size={18} style={{ verticalAlign: "middle", marginRight: 6 }} />
+                <span>{location || "—"}</span>
+              </div>
+            </div>
         <div className={styles.igPostsGrid}>
           {profile.postImages.map((img, idx) => (
             <div key={idx} className={styles.igPostItem}>
