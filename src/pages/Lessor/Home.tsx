@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAccount } from "wagmi";
 import { supabase } from "../../../supabase/supabase-client";
 import styles from "../../styles/LessorHome.module.css";
@@ -18,6 +18,7 @@ interface Post {
   category_id: number;
   subcategory_id: number;
   user_id: string;
+  created_at?: string;
 }
 
 interface Category {
@@ -25,85 +26,103 @@ interface Category {
   name: string;
 }
 
+const PAGE_SIZE = 6;
+
 export default function LessorHome() {
   const { address } = useAccount();
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
-  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showSendOffer, setShowSendOffer] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
-  // Fetch posts and categories
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const loaderRef = useRef<HTMLDivElement>(null);
+
+  // Fetch categories for filter dropdown
   useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true);
-
-        // Fetch all posts
-        const { data: postsData, error: postsError } = await supabase
-          .from("posts")
-          .select(
-            `
-            id,
-            title,
-            description,
-            image_url,
-            location,
-            pickup_date,
-            return_date,
-            category_id,
-            subcategory_id,
-            user_id
-          `
-          )
-          .order("created_at", { ascending: false });
-
-        if (postsError) throw postsError;
-        setPosts(postsData || []);
-        setFilteredPosts(postsData || []);
-
-        // Fetch categories
-        const { data: categoriesData, error: categoriesError } = await supabase
-          .from("categories")
-          .select("id, name");
-
-        if (categoriesError) throw categoriesError;
-        setCategories(categoriesData || []);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
+    const fetchCategories = async () => {
+      const { data } = await supabase.from("categories").select("id, name");
+      setCategories(data || []);
+    };
+    fetchCategories();
   }, []);
 
-  // Filter posts based on search and category
-  useEffect(() => {
-    let filtered = posts;
-
-    if (search) {
-      filtered = filtered.filter(
-        (post) =>
-          post.title.toLowerCase().includes(search.toLowerCase()) ||
-          post.description.toLowerCase().includes(search.toLowerCase())
-      );
-    }
+  // Fetch posts with pagination and filter/search
+  const fetchPosts = async (pageNum: number) => {
+    setLoading(true);
+    const from = (pageNum - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    let query = supabase
+      .from("posts")
+      .select(
+        "id,title,description,image_url,location,pickup_date,return_date,category_id,subcategory_id,user_id,created_at"
+      )
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
     if (selectedCategory) {
-      filtered = filtered.filter(
-        (post) => post.category_id.toString() === selectedCategory
-      );
+      query = query.eq("category_id", selectedCategory);
+    }
+    if (search) {
+      const { data, error } = await query;
+      let filtered = data || [];
+      if (search) {
+        filtered = filtered.filter(
+          (post: any) =>
+            post.title.toLowerCase().includes(search.toLowerCase()) ||
+            (post.description &&
+              post.description.toLowerCase().includes(search.toLowerCase()))
+        );
+      }
+      setPosts((prev) => (pageNum === 1 ? filtered : [...prev, ...filtered]));
+      setHasMore(filtered.length === PAGE_SIZE);
+      setLoading(false);
+      return;
     }
 
-    setFilteredPosts(filtered);
-  }, [search, selectedCategory, posts]);
+    const { data, error } = await query;
+    if (!error && data) {
+      setPosts((prev) => (pageNum === 1 ? data : [...prev, ...data]));
+      setHasMore(data.length === PAGE_SIZE);
+    } else {
+      setHasMore(false);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    setPage(1);
+    setPosts([]);
+  }, [selectedCategory, search]);
+
+  useEffect(() => {
+    fetchPosts(page);
+    // eslint-disable-next-line
+  }, [page, selectedCategory, search]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    if (!hasMore || loading) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 1 }
+    );
+    if (loaderRef.current) observer.observe(loaderRef.current);
+    return () => {
+      if (loaderRef.current) observer.unobserve(loaderRef.current);
+    };
+  }, [hasMore, loading]);
 
   const handlePostClick = (post: Post) => {
     setSelectedPost(post);
@@ -132,7 +151,10 @@ export default function LessorHome() {
             type="text"
             placeholder="Search items..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             className={styles.searchBar}
           />
           <div className={styles.filterWrapper}>
@@ -151,6 +173,7 @@ export default function LessorHome() {
                   onClick={() => {
                     setSelectedCategory("");
                     setShowCategoryDropdown(false);
+                    setPage(1);
                   }}
                 >
                   All Categories
@@ -166,6 +189,7 @@ export default function LessorHome() {
                     onClick={() => {
                       setSelectedCategory(category.id.toString());
                       setShowCategoryDropdown(false);
+                      setPage(1);
                     }}
                   >
                     {category.name}
@@ -177,36 +201,44 @@ export default function LessorHome() {
         </div>
 
         <div className={styles.postsGrid}>
-          {loading ? (
-            <div className={styles.loading}>Loading...</div>
-          ) : filteredPosts.length === 0 ? (
-            <div className={styles.noPosts}>No items found</div>
-          ) : (
-            filteredPosts.map((post) => (
-              <div
-                key={post.id}
-                className={styles.postCard}
-                onClick={() => handlePostClick(post)}
-              >
-                <div className={styles.imageWrapper}>
-                  <img src={post.image_url} alt={post.title} />
-                </div>
-                <div className={styles.postInfo}>
-                  <h3>{post.title}</h3>
-                  <p className={styles.location}>{post.location}</p>
-                  <div className={styles.dates}>
-                    <span>
-                      Pickup: {new Date(post.pickup_date).toLocaleDateString()}
-                    </span>
-                    <span>
-                      Return: {new Date(post.return_date).toLocaleDateString()}
-                    </span>
-                  </div>
+          {posts.map((post) => (
+            <div
+              key={post.id}
+              className={styles.postCard}
+              onClick={() => handlePostClick(post)}
+            >
+              <div className={styles.imageWrapper}>
+                <img src={post.image_url} alt={post.title} />
+              </div>
+              <div className={styles.postInfo}>
+                <h3>{post.title}</h3>
+                <p className={styles.location}>{post.location}</p>
+                <div className={styles.dates}>
+                  <span>
+                    Pickup:{" "}
+                    {post.pickup_date
+                      ? new Date(post.pickup_date).toLocaleDateString()
+                      : ""}
+                  </span>
+                  <span>
+                    Return:{" "}
+                    {post.return_date
+                      ? new Date(post.return_date).toLocaleDateString()
+                      : ""}
+                  </span>
                 </div>
               </div>
-            ))
-          )}
+            </div>
+          ))}
         </div>
+        {loading && <div className={styles.loading}>Loading...</div>}
+        {!hasMore && posts.length > 0 && (
+          <div className={styles.loading}>No more posts.</div>
+        )}
+        <div ref={loaderRef} style={{ height: 1 }} />
+        {posts.length === 0 && !loading && (
+          <div className={styles.noPosts}>No posts found.</div>
+        )}
 
         <SendOffer
           isOpen={showSendOffer}
