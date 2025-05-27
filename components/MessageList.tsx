@@ -1,5 +1,5 @@
-import React, { RefObject } from "react";
-import styles from "../src/styles/Inbox.module.css";
+import React, { RefObject, useState } from "react";
+import styles from "../src/styles/MessageList.module.css";
 
 interface Message {
   id: string;
@@ -7,6 +7,7 @@ interface Message {
   sender_id: string;
   content: string;
   created_at: string;
+  image_url?: string | null;
 }
 
 interface MessageListProps {
@@ -22,6 +23,8 @@ export default function MessageList({
   messagesEndRef,
   timeAgo,
 }: MessageListProps) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   return (
     <div className={styles.messagesList}>
       {messages.length === 0 && (
@@ -38,11 +41,42 @@ export default function MessageList({
               : styles.messageReceived
           }
         >
-          <span>{msg.content}</span>
+          {/* Show image if image_url exists */}
+          {msg.image_url && (
+            <>
+              <img
+                src={msg.image_url}
+                alt="chat"
+                style={{
+                  maxWidth: 180,
+                  maxHeight: 180,
+                  borderRadius: 8,
+                  marginBottom: msg.content ? 4 : 0,
+                  display: "block",
+                  cursor: "pointer",
+                }}
+                onClick={() => setPreviewUrl(msg.image_url || null)}
+              />
+            </>
+          )}
+          {/* Show text if content exists */}
+          {msg.content && <span>{msg.content}</span>}
           <div className={styles.messageTime}>{timeAgo(msg.created_at)}</div>
         </div>
       ))}
       <div ref={messagesEndRef} />
+
+      {/* Image preview modal */}
+      {previewUrl && (
+        <div
+          className={styles.imagePreviewOverlay}
+          onClick={() => setPreviewUrl(null)}
+        >
+          <div className={styles.imagePreviewContent}>
+            <img src={previewUrl} alt="preview" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

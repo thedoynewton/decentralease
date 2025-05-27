@@ -68,9 +68,10 @@ export default function Inbox() {
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  async function handleSendMessage(e: React.FormEvent) {
+  async function handleSendMessage(e: React.FormEvent, imageUrl?: string) {
     e.preventDefault();
-    if (!messageInput.trim() || !selectedBooking || !address) return;
+    if ((!messageInput.trim() && !imageUrl) || !selectedBooking || !address)
+      return;
     setSending(true);
     const { data: userData } = await supabase
       .from("users")
@@ -84,15 +85,13 @@ export default function Inbox() {
         {
           booking_id: selectedBooking.id,
           sender_id: userData.id,
-          content: messageInput,
+          content: imageUrl ? "" : messageInput,
+          image_url: imageUrl || null,
         },
       ])
       .select();
     if (!error && data) {
-      // Only append if the booking_id matches the current selectedBooking
-      if (data[0].booking_id === selectedBooking.id) {
-        setMessages((prev) => [...prev, data[0]]);
-      }
+      setMessages((prev) => [...prev, data[0]]);
       setMessageInput("");
     }
     setSending(false);
@@ -260,7 +259,7 @@ export default function Inbox() {
         {/* Main: Booking Details (desktop only) */}
         {!isMobile && selectedBooking && (
           <div className={styles.main}>
-            <div className={styles.bookingDetails}>              
+            <div className={styles.bookingDetails}>
               <div
                 style={{
                   display: "flex",
@@ -289,7 +288,7 @@ export default function Inbox() {
                   <div>{selectedBooking.lessorName}</div>
                 </div>
               </div>
-                <BookingSummaryCard booking={selectedBooking} />
+              <BookingSummaryCard booking={selectedBooking} />
               <p>
                 <b>Status:</b> {selectedBooking.status}
               </p>

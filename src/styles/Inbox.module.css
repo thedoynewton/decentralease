@@ -277,3 +277,21 @@
   margin-top: 2px;
   text-align: right;
 }
+
+.imagePreviewOverlay {
+  position: fixed;
+  z-index: 9999;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.imagePreviewContent img {
+  max-width: 90vw;
+  max-height: 80vh;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+  background: #fff;
+}

@@ -1,0 +1,33 @@
+.messageInputForm {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.messageInput {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: 1px solid #d1d5db;
+  font-size: 1rem;
+  outline: none;
+}
+
+.sendButton {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sendButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
