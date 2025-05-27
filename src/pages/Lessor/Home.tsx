@@ -111,7 +111,7 @@ export default function LessorHome() {
   };
 
   const handleNotificationClick = () => {
-    router.push("/Lessor/Notifications");
+    alert("Notifications are not implemented yet.");
   };
 
   return (

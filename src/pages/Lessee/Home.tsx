@@ -1,14 +1,12 @@
-import { useAccount, useDisconnect } from "wagmi";
+import { useAccount } from "wagmi";
 import { useRouter } from "next/router";
 import { supabase } from "../../../supabase/supabase-client";
 import { useState, useEffect, useRef } from "react";
-import styles from "../../styles/LesseeHome.module.css";
+import styles from "../../styles/LesseeHome.module.css"; // Use LessorHome styles!
 import Layout from "../../../components/LesseeLayout";
 import Link from "next/link";
+import { Search, Bell, Filter } from "@deemlol/next-icons";
 
-import { Search, Bell } from "@deemlol/next-icons";
-
-// Helper to format time ago
 function timeAgo(dateString: string) {
   const now = new Date();
   const date = new Date(dateString);
@@ -35,6 +33,12 @@ export default function Home() {
   const [userId, setUserId] = useState<string | null>(null);
   const { address } = useAccount();
 
+  // For search/filter
+  const [search, setSearch] = useState("");
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+
   useEffect(() => {
     const fetchUserId = async () => {
       if (!address) return;
@@ -57,18 +61,52 @@ export default function Home() {
     fetchUserId();
   }, [address]);
 
-  // Fetch listings with pagination
+  // Fetch categories for filter dropdown
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const { data } = await supabase.from("categories").select("id, name");
+      setCategories(data || []);
+    };
+    fetchCategories();
+  }, []);
+
+  // Fetch listings with pagination and filter/search
   const fetchListings = async (pageNum: number) => {
     setLoading(true);
     const from = (pageNum - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
-    const { data, error } = await supabase
+    let query = supabase
       .from("listings")
-      .select("id,created_at,title,rental_fee,image_url")
+      .select(
+        "id,created_at,title,rental_fee,image_url"
+      )
       .neq("user_id", userId)
       .order("created_at", { ascending: false })
       .range(from, to);
 
+    if (selectedCategory) {
+      query = query.eq("category_id", selectedCategory);
+    }
+    if (search) {
+      const { data, error } = await query;
+      let filtered = data || [];
+      if (search) {
+        filtered = filtered.filter(
+          (listing: any) =>
+            listing.title.toLowerCase().includes(search.toLowerCase()) ||
+            (listing.description &&
+              listing.description.toLowerCase().includes(search.toLowerCase()))
+        );
+      }
+      setListings((prev) =>
+        pageNum === 1 ? filtered : [...prev, ...filtered]
+      );
+      setHasMore(filtered.length === PAGE_SIZE);
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await query;
     if (!error && data) {
       setListings((prev) => (pageNum === 1 ? data : [...prev, ...data]));
       setHasMore(data.length === PAGE_SIZE);
@@ -85,7 +123,7 @@ export default function Home() {
     }
     fetchListings(page);
     // eslint-disable-next-line
-  }, [userId, page]);
+  }, [userId, page, selectedCategory, search]);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -104,35 +142,114 @@ export default function Home() {
     };
   }, [hasMore, loading]);
 
+  const handleNotificationClick = () => {
+    alert("Notifications are not implemented yet.");
+  };
+
   return (
     <Layout>
       <div className={styles.container}>
-        <div className={styles.topBar}>
-          <h1 className={styles.title}>Rental Listings</h1>
-          <div className={styles.iconGroup}>
-            <Search size={24} className={styles.icon} />
-            <Bell size={24} className={styles.icon} />
+        <div className={styles.header}>
+          <h1 className={styles.headerTitle}>Find Your Next Rental</h1>
+          <button
+            className={styles.notificationButton}
+            onClick={handleNotificationClick}
+          >
+            <Bell size={24} />
+          </button>
+        </div>
+
+        <div className={styles.searchFilterRow}>
+          <input
+            type="text"
+            placeholder="Search items..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className={styles.searchBar}
+          />
+          <div className={styles.filterWrapper}>
+            <button
+              className={styles.filterButton}
+              onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+            >
+              <Filter size={22} color="#1976d2" />
+            </button>
+            {showCategoryDropdown && (
+              <div className={styles.categoryDropdown}>
+                <div
+                  className={`${styles.categoryItem} ${
+                    !selectedCategory ? styles.selected : ""
+                  }`}
+                  onClick={() => {
+                    setSelectedCategory("");
+                    setShowCategoryDropdown(false);
+                    setPage(1);
+                  }}
+                >
+                  All Categories
+                </div>
+                {categories.map((category) => (
+                  <div
+                    key={category.id}
+                    className={`${styles.categoryItem} ${
+                      selectedCategory === category.id.toString()
+                        ? styles.selected
+                        : ""
+                    }`}
+                    onClick={() => {
+                      setSelectedCategory(category.id.toString());
+                      setShowCategoryDropdown(false);
+                      setPage(1);
+                    }}
+                  >
+                    {category.name}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className={styles.listingsGrid}>
+        <div className={styles.postsGrid}>
           {listings.map((listing) => (
             <Link
               key={listing.id}
               href={`/Lessee/Listing/${listing.id}`}
-              className={styles.listingCard}
+              className={styles.postCard}
               style={{ textDecoration: "none", color: "inherit" }}
             >
-              <img
-                src={listing.image_url}
-                alt={listing.title}
-                className={styles.listingImage}
-              />
-              <div className={styles.listingInfo}>
+              <div className={styles.imageWrapper}>
+                <img
+                  src={listing.image_url}
+                  alt={listing.title}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              </div>
+              <div className={styles.postInfo}>
+                <h3>{listing.title}</h3>
+                <div className={styles.location}>{listing.location}</div>
+                <div className={styles.dates}>
+                  <span>
+                    {listing.pickup_date
+                      ? `Pickup: ${new Date(
+                          listing.pickup_date
+                        ).toLocaleDateString()}`
+                      : ""}
+                  </span>
+                  <span>
+                    {listing.return_date
+                      ? `Return: ${new Date(
+                          listing.return_date
+                        ).toLocaleDateString()}`
+                      : ""}
+                  </span>
+                </div>
                 <div className={styles.listingTime}>
                   {timeAgo(listing.created_at)}
                 </div>
-                <div className={styles.listingTitle}>{listing.title}</div>
                 <div className={styles.listingFee}>
                   Rental Fee: <b>{listing.rental_fee} ETH</b>
                 </div>
@@ -140,13 +257,13 @@ export default function Home() {
             </Link>
           ))}
         </div>
-        {loading && <div className={styles.status}>Loading...</div>}
+        {loading && <div className={styles.loading}>Loading...</div>}
         {!hasMore && listings.length > 0 && (
-          <div className={styles.status}>No more listings.</div>
+          <div className={styles.loading}>No more listings.</div>
         )}
         <div ref={loaderRef} style={{ height: 1 }} />
         {listings.length === 0 && !loading && (
-          <div className={styles.noListings}>No listings found.</div>
+          <div className={styles.noPosts}>No listings found.</div>
         )}
       </div>
     </Layout>
