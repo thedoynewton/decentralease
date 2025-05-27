@@ -145,7 +145,6 @@ export default function Activity() {
                   <div className={styles.bookingDetails}> {/* Added className for potential styling */}
                     <strong>{booking.listing_id?.title}</strong>
                     <div>Total Amount: {booking.total_amount} ETH</div>
-                    <div>Status: {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}</div>
                   </div>
                   {activeTab === "pending" && ( // Only show cancel for 'pending' bookings
                     <button
