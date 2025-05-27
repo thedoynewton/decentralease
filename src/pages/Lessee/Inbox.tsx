@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Layout from "../../../components/Layout";
 import styles from "../../styles/Inbox.module.css";
 import { useAccount } from "wagmi";
 import { supabase } from "../../../supabase/supabase-client";
 import BookingSummaryCard from "../../../components/BookingSummaryCard";
+import MessageList from "../../../components/MessageList";
+import MessageInput from "../../../components/MessageInput";
 
 interface Booking {
   id: string;
@@ -59,6 +61,59 @@ export default function Inbox() {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const isMobile = useIsMobile();
+
+  // Message state
+  const [messages, setMessages] = useState<any[]>([]);
+  const [messageInput, setMessageInput] = useState("");
+  const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  async function handleSendMessage(e: React.FormEvent) {
+    e.preventDefault();
+    if (!messageInput.trim() || !selectedBooking || !address) return;
+    setSending(true);
+    const { data: userData } = await supabase
+      .from("users")
+      .select("id")
+      .eq("wallet_address", address)
+      .single();
+    if (!userData) return setSending(false);
+    const { data, error } = await supabase
+      .from("messages")
+      .insert([
+        {
+          booking_id: selectedBooking.id,
+          sender_id: userData.id,
+          content: messageInput,
+        },
+      ])
+      .select();
+    if (!error && data) {
+      // Only append if the booking_id matches the current selectedBooking
+      if (data[0].booking_id === selectedBooking.id) {
+        setMessages((prev) => [...prev, data[0]]);
+      }
+      setMessageInput("");
+    }
+    setSending(false);
+  }
+
+  // Add this useEffect to fetch messages when selectedBooking changes
+  useEffect(() => {
+    async function fetchMessages() {
+      if (!selectedBooking) {
+        setMessages([]);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("booking_id", selectedBooking.id)
+        .order("created_at", { ascending: true });
+      if (!error) setMessages(data || []);
+    }
+    fetchMessages();
+  }, [selectedBooking]);
 
   useEffect(() => {
     async function fetchApprovedBookings() {
@@ -116,16 +171,17 @@ export default function Inbox() {
         }
 
         const bookingsWithLessor =
-        data?.map((booking: any) => ({
-          ...booking,
-          lessorName: booking.listings?.users?.name || "N/A",
-          lessorProfileImageUrl: booking.listings?.users?.profile_image_url || null,
-          updated_at: booking.updated_at,
-          total_amount: booking.total_amount,
-          pickup_date: booking.pickup_date,
-          return_date: booking.return_date,
-          listing_title: booking.listings?.title || "N/A",
-        })) || [];
+          data?.map((booking: any) => ({
+            ...booking,
+            lessorName: booking.listings?.users?.name || "N/A",
+            lessorProfileImageUrl:
+              booking.listings?.users?.profile_image_url || null,
+            updated_at: booking.updated_at,
+            total_amount: booking.total_amount,
+            pickup_date: booking.pickup_date,
+            return_date: booking.return_date,
+            listing_title: booking.listings?.title || "N/A",
+          })) || [];
 
         setApprovedBookings(bookingsWithLessor);
         // Auto-select the first booking if available (desktop only)
@@ -204,8 +260,7 @@ export default function Inbox() {
         {/* Main: Booking Details (desktop only) */}
         {!isMobile && selectedBooking && (
           <div className={styles.main}>
-            <div className={styles.bookingDetails}>
-              <BookingSummaryCard booking={selectedBooking} />
+            <div className={styles.bookingDetails}>              
               <div
                 style={{
                   display: "flex",
@@ -234,12 +289,22 @@ export default function Inbox() {
                   <div>{selectedBooking.lessorName}</div>
                 </div>
               </div>
+                <BookingSummaryCard booking={selectedBooking} />
               <p>
                 <b>Status:</b> {selectedBooking.status}
               </p>
-              <div className={styles.messagesPlaceholder}>
-                <p>This is where messages or booking details will appear.</p>
-              </div>
+              <MessageList
+                messages={messages}
+                address={address}
+                messagesEndRef={messagesEndRef}
+                timeAgo={timeAgo}
+              />
+              <MessageInput
+                messageInput={messageInput}
+                setMessageInput={setMessageInput}
+                sending={sending}
+                onSend={handleSendMessage}
+              />
             </div>
           </div>
         )}
@@ -280,9 +345,18 @@ export default function Inbox() {
               <p>
                 <b>Status:</b> {selectedBooking.status}
               </p>
-              <div className={styles.messagesPlaceholder}>
-                <p>This is where messages or booking details will appear.</p>
-              </div>
+              <MessageList
+                messages={messages}
+                address={address}
+                messagesEndRef={messagesEndRef}
+                timeAgo={timeAgo}
+              />
+              <MessageInput
+                messageInput={messageInput}
+                setMessageInput={setMessageInput}
+                sending={sending}
+                onSend={handleSendMessage}
+              />
             </div>
           </div>
         )}

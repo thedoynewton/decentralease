@@ -204,3 +204,76 @@
   text-align: center;
   font-weight: 500;
 }
+
+.messageInputForm {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.messageInput {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: 1px solid #d1d5db;
+  font-size: 1rem;
+  outline: none;
+}
+
+.sendButton {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sendButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.messagesList {
+  margin-top: 24px;
+  margin-bottom: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.messageSent {
+  align-self: flex-end;
+  background: #2563eb;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 18px 18px 4px 18px;
+  max-width: 70%;
+  word-break: break-word;
+  position: relative;
+}
+
+.messageReceived {
+  align-self: flex-start;
+  background: #e5e7eb;
+  color: #222;
+  padding: 8px 14px;
+  border-radius: 18px 18px 18px 4px;
+  max-width: 70%;
+  word-break: break-word;
+  position: relative;
+}
+
+.messageTime {
+  font-size: 0.75em;
+  color: #888;
+  margin-top: 2px;
+  text-align: right;
+}
