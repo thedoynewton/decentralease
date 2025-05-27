@@ -17,15 +17,15 @@ export default function Profile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState<string>("Username");
   const [iconSize, setIconSize] = useState(28);
-  const [postImages, setPostImages] = useState<string[]>([]);
+  const [postImages, setPostImages] = useState<{ image_url: string; title: string }[]>([]);
+  const [filteredImages, setFilteredImages] = useState<{ image_url: string; title: string }[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
   const [location, setLocation] = useState<string>("");
-  
+  const [search, setSearch] = useState<string>("");
 
   useEffect(() => {
-    // Set icon size based on window width (client-side only)
     const handleResize = () => {
       setIconSize(window.innerWidth <= 600 ? 20 : 28);
     };
@@ -34,7 +34,7 @@ export default function Profile() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-   // Fetch avatar, name, and extra profile info from Supabase
+  // Fetch avatar, name, and extra profile info from Supabase
   useEffect(() => {
     const fetchProfile = async () => {
       if (!address) return;
@@ -68,24 +68,36 @@ export default function Profile() {
       if (!userId) return;
       const { data, error } = await supabase
         .from("posts")
-        .select("image_url")
+        .select("image_url, title")
         .eq("user_id", userId);
       if (!error && Array.isArray(data)) {
-        setPostImages(data.map((post) => post.image_url).filter(Boolean));
+        setPostImages(data.filter((post) => post.image_url));
+        setFilteredImages(data.filter((post) => post.image_url));
       } else {
         setPostImages([]);
+        setFilteredImages([]);
       }
     };
     fetchPosts();
   }, [userId]);
 
-  // Mock profile data for demonstration
+  // Search function
+  useEffect(() => {
+    if (!search) {
+      setFilteredImages(postImages);
+    } else {
+      setFilteredImages(
+        postImages.filter((post) =>
+          post.title?.toLowerCase().includes(search.toLowerCase())
+        )
+      );
+    }
+  }, [search, postImages]);
+
   const profile = {
     username: name,
     posts: postImages.length,
-    // followers: 340,
-    // following: 180,
-    postImages,
+    postImages: filteredImages,
   };
 
   const handleDisconnect = async () => {
@@ -100,7 +112,6 @@ export default function Profile() {
     setTimeout(() => router.push("/"), 800);
   };
 
-  // Handler for avatar change (upload to Supabase Storage)
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !address) return;
@@ -212,13 +223,7 @@ export default function Profile() {
               <span>
                 <strong>{profile.posts}</strong> posts
               </span>
-              {/* <span>
-                <strong>{profile.followers}</strong> followers
-              </span>
-              <span>
-                <strong>{profile.following}</strong> following
-              </span> */}
-            </div>           
+            </div>
             {address && (
               <button
                 className={styles.disconnectButton}
@@ -232,26 +237,50 @@ export default function Profile() {
           </div>
         </div>
         <div className={styles.aboutSection}>
-              <h2 className={styles.aboutTitle}>About me</h2>
-              <div>
-                <Email size={18} style={{ verticalAlign: "middle", marginRight: 6 }} />
-                <span>{email || "—"}</span>
-              </div>
-              <div>
-                <Phone size={18} style={{ verticalAlign: "middle", marginRight: 6 }} />
-                <span>{phone || "—"}</span>
-              </div>
-              <div>
-                <MapPin size={18} style={{ verticalAlign: "middle", marginRight: 6 }} />
-                <span>{location || "—"}</span>
-              </div>
-            </div>
+          <h2 className={styles.aboutTitle}>About me</h2>
+          <div>
+            <Email size={18} style={{ verticalAlign: "middle", marginRight: 6 }} />
+            <span>{email || "—"}</span>
+          </div>
+          <div>
+            <Phone size={18} style={{ verticalAlign: "middle", marginRight: 6 }} />
+            <span>{phone || "—"}</span>
+          </div>
+          <div>
+            <MapPin size={18} style={{ verticalAlign: "middle", marginRight: 6 }} />
+            <span>{location || "—"}</span>
+          </div>
+        </div>
+        {/* Search bar */}
+        <div style={{ margin: "1.5rem 0 1rem 0" }}>
+          <input
+            type="text"
+            placeholder="Search posts title..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className={styles.searchBar}
+            style={{
+              width: "100%",
+              padding: "0.6rem 1rem",
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+              fontSize: "1rem",
+              outline: "none",
+            }}
+          />
+        </div>
         <div className={styles.igPostsGrid}>
-          {profile.postImages.map((img, idx) => (
-            <div key={idx} className={styles.igPostItem}>
-              <img src={img} alt={`Post ${idx + 1}`} />
+          {profile.postImages.length === 0 ? (
+            <div style={{ gridColumn: "1/-1", textAlign: "center", color: "#888" }}>
+              No posts found.
             </div>
-          ))}
+          ) : (
+            profile.postImages.map((img, idx) => (
+              <div key={idx} className={styles.igPostItem}>
+                <img src={img.image_url} alt={img.title || `Post ${idx + 1}`} title={img.title} />
+              </div>
+            ))
+          )}
         </div>
       </div>
     </Layout>

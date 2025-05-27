@@ -122,6 +122,11 @@
   color: #222;
 }
 
+.searchBar {
+  margin-bottom: 1rem;
+  box-sizing: border-box;
+}
+
 @media (max-width: 600px) {
   .igProfileContainer {
     padding: 1rem;
