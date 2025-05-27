@@ -3,7 +3,7 @@
   margin: 2rem auto;
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   padding: 2rem;
 }
 
@@ -93,7 +93,7 @@
   right: 8px;
   background: #fff;
   border-radius: 50%;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   padding: 2px;
   display: flex;
   align-items: center;
@@ -122,9 +122,78 @@
   color: #222;
 }
 
+.searchFilterRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 1.5rem 0 1rem 0;
+}
+
 .searchBar {
-  margin-bottom: 1rem;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  outline: none;
   box-sizing: border-box;
+  transition: border 0.2s;
+}
+
+.searchBar:focus {
+  border: 1.5px solid #1976d2;
+}
+
+.filterWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.filterButton {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: border 0.2s;
+}
+
+.filterButton:focus,
+.filterButton:hover {
+  border: 1.5px solid #1976d2;
+}
+
+.categoryDropdown {
+  position: absolute;
+  top: 110%;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 10;
+  min-width: 140px;
+  padding: 0.5rem 0;
+  max-height: 220px;      /* Make dropdown scrollable */
+  overflow-y: auto;
+}
+
+.categoryDropdownItem {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  color: #333;
+  font-weight: 400;
+  transition: background 0.15s, color 0.15s;
+}
+
+.categoryDropdownItem:hover,
+.selectedCategory {
+  background: #f0f7ff;
+  color: #1976d2;
+  font-weight: 600;
 }
 
 @media (max-width: 600px) {
@@ -192,5 +261,18 @@
   /* Hide the stats row on mobile since we show posts count above */
   .igStats {
     display: none;
+  }
+
+  .searchFilterRow {
+    flex-direction: row;
+    gap: 6px;
+  }
+  .filterButton {
+    padding: 0.35rem 0.5rem;
+  }
+  .categoryDropdown {
+    min-width: 110px;
+    max-height: 160px; 
+    font-size: 0.97rem;
   }
 }

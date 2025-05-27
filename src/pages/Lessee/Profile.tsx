@@ -2,28 +2,42 @@ import { useAccount, useDisconnect } from "wagmi";
 import { supabase } from "../../../supabase/supabase-client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import { User, PlusCircle, Email, Phone, MapPin } from "@deemlol/next-icons";
+import { User, PlusCircle, Email, Phone, MapPin, Filter } from "@deemlol/next-icons";
 
 import Layout from "../../../components/Layout";
 import styles from "../../styles/Profile.module.css";
 
 export default function Profile() {
-  const { address } = useAccount();
+  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { disconnect } = useDisconnect();
+  const { address } = useAccount();
   const [status, setStatus] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState<string>("Username");
   const [iconSize, setIconSize] = useState(28);
-  const [postImages, setPostImages] = useState<{ image_url: string; title: string }[]>([]);
-  const [filteredImages, setFilteredImages] = useState<{ image_url: string; title: string }[]>([]);
+  const [postImages, setPostImages] = useState<{ image_url: string; title: string; category_id?: string | number }[]>([]);
+  const [filteredImages, setFilteredImages] = useState<{ image_url: string; title: string; category_id?: string | number }[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
   const [location, setLocation] = useState<string>("");
   const [search, setSearch] = useState<string>("");
+  const [category, setCategory] = useState<string>("");
+  const [categoriesList, setCategoriesList] = useState<{ id: string | number; name: string }[]>([]);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+
+  // Fetch categories for dropdown
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const { data, error } = await supabase.from("categories").select("id, name");
+      if (!error && Array.isArray(data)) {
+        setCategoriesList(data);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -68,7 +82,7 @@ export default function Profile() {
       if (!userId) return;
       const { data, error } = await supabase
         .from("posts")
-        .select("image_url, title")
+        .select("image_url, title, category_id")
         .eq("user_id", userId);
       if (!error && Array.isArray(data)) {
         setPostImages(data.filter((post) => post.image_url));
@@ -81,18 +95,26 @@ export default function Profile() {
     fetchPosts();
   }, [userId]);
 
-  // Search function
+  // Filter by search and category
   useEffect(() => {
-    if (!search) {
-      setFilteredImages(postImages);
-    } else {
-      setFilteredImages(
-        postImages.filter((post) =>
-          post.title?.toLowerCase().includes(search.toLowerCase())
-        )
+    let filtered = postImages;
+    if (search) {
+      filtered = filtered.filter((post) =>
+        post.title?.toLowerCase().includes(search.toLowerCase())
       );
     }
-  }, [search, postImages]);
+    if (category) {
+      filtered = filtered.filter((post) =>
+        post.category_id?.toString() === category
+      );
+    }
+    setFilteredImages(filtered);
+  }, [search, category, postImages]);
+
+  // Get unique categories for filter dropdown
+  const categories = Array.from(
+    new Set(postImages.map((post) => post.category_id).filter(Boolean))
+  );
 
   const profile = {
     username: name,
@@ -251,23 +273,50 @@ export default function Profile() {
             <span>{location || "—"}</span>
           </div>
         </div>
-        {/* Search bar */}
-        <div style={{ margin: "1.5rem 0 1rem 0" }}>
+        {/* Search bar and filter */}
+        <div className={styles.searchFilterRow}>
           <input
             type="text"
             placeholder="Search posts title..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className={styles.searchBar}
-            style={{
-              width: "100%",
-              padding: "0.6rem 1rem",
-              borderRadius: "8px",
-              border: "1px solid #ccc",
-              fontSize: "1rem",
-              outline: "none",
-            }}
           />
+          <div className={styles.filterWrapper}>
+            <button
+              type="button"
+              className={styles.filterButton}
+              onClick={() => setShowCategoryDropdown((v) => !v)}
+              aria-label="Filter by category"
+            >
+              <Filter size={22} color="#1976d2" />
+            </button>
+            {showCategoryDropdown && (
+              <div className={styles.categoryDropdown}>
+                <div
+                  className={styles.categoryDropdownItem + (!category ? " " + styles.selectedCategory : "")}
+                  onClick={() => {
+                    setCategory("");
+                    setShowCategoryDropdown(false);
+                  }}
+                >
+                  All Categories
+                </div>
+                {categoriesList.map((cat) => (
+                  <div
+                    key={cat.id}
+                    className={styles.categoryDropdownItem + (category === cat.id.toString() ? " " + styles.selectedCategory : "")}
+                    onClick={() => {
+                      setCategory(cat.id.toString());
+                      setShowCategoryDropdown(false);
+                    }}
+                  >
+                    {cat.name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <div className={styles.igPostsGrid}>
           {profile.postImages.length === 0 ? (
