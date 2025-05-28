@@ -44,6 +44,9 @@ export default function Activity() {
           total_amount,
           status,
           image_proof_url,
+          return_date,
+          lessee_confirmed,
+          lessor_confirmed,
           listing_id (
             title,
             image_url
@@ -109,6 +112,22 @@ export default function Activity() {
     },
     [fetchUserBookings]
   );
+
+  const handleConfirmReturn = async (bookingId: string) => {
+    if (window.confirm("Confirm that you have returned the item?")) {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ lessee_confirmed: true })
+        .eq("id", bookingId);
+
+      if (error) {
+        alert("Failed to confirm return: " + error.message);
+      } else {
+        alert("Return confirmed!");
+        fetchUserBookings();
+      }
+    }
+  };
 
   const filteredBookings = bookings.filter(
     (b) => b.status.toLowerCase() === activeTab.toLowerCase()
@@ -238,9 +257,83 @@ export default function Activity() {
                   {activeTab === "paid" && (
                     <>
                       {booking.image_proof_url ? (
-                        <span style={{ color: "#43a047", fontWeight: 500 }}>
-                          In use
-                        </span>
+                        (() => {
+                          // Check if today is the return date or later
+                          const today = new Date();
+                          const returnDate = booking.return_date
+                            ? new Date(booking.return_date)
+                            : null;
+                          const lesseeConfirmed = booking.lessee_confirmed;
+                          const lessorConfirmed = booking.lessor_confirmed;
+                          const totalConfirmed =
+                            (lesseeConfirmed ? 1 : 0) +
+                            (lessorConfirmed ? 1 : 0);
+
+                          // If both confirmed and status is still "paid", update to "completed"
+                          if (
+                            returnDate &&
+                            today >= returnDate &&
+                            lesseeConfirmed &&
+                            lessorConfirmed &&
+                            booking.status === "paid"
+                          ) {
+                            // Fire-and-forget status update (no await in render)
+                            supabase
+                              .from("bookings")
+                              .update({ status: "completed" })
+                              .eq("id", booking.id)
+                              .then(() => fetchUserBookings());
+                          }
+
+                          if (returnDate && today >= returnDate) {
+                            return (
+                              <div>
+                                <div
+                                  style={{ marginBottom: 8, fontWeight: 500 }}
+                                >
+                                  Confirmation: {totalConfirmed}/2
+                                </div>
+                                {!lesseeConfirmed && (
+                                  <button
+                                    className={styles.payButton}
+                                    style={{ background: "#2563eb" }}
+                                    onClick={() =>
+                                      handleConfirmReturn(booking.id)
+                                    }
+                                    disabled={uploadingId === booking.id}
+                                  >
+                                    Confirm Return
+                                  </button>
+                                )}
+                                {lesseeConfirmed && totalConfirmed < 2 && (
+                                  <span
+                                    style={{
+                                      color: "#43a047",
+                                      fontWeight: 500,
+                                    }}
+                                  >
+                                    Waiting for lessor confirmation...
+                                  </span>
+                                )}
+                                {totalConfirmed === 2 && (
+                                  <span
+                                    style={{
+                                      color: "#43a047",
+                                      fontWeight: 500,
+                                    }}
+                                  >
+                                    Both parties confirmed. Booking completed!
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          }
+                          return (
+                            <span style={{ color: "#43a047", fontWeight: 500 }}>
+                              In use
+                            </span>
+                          );
+                        })()
                       ) : (
                         <>
                           <button
