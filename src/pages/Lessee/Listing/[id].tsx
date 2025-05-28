@@ -76,59 +76,82 @@ export default function ListingDetail() {
 
   // Function to insert booking
   const handleBooking = async () => {
-    const days = Math.max(
-      1,
-      Math.ceil(
-        (new Date(returnDate).getTime() - new Date(pickupDate).getTime()) /
-          (1000 * 60 * 60 * 24)
-      )
-    );
-    const rentalFee = (Number(listing.rental_fee) * days).toString();
-    const securityDeposit = (Number(listing.security_deposit) || 0).toString();
-    const totalAmount = (
-      Number(rentalFee) +
-      Number(securityDeposit) +
-      PLATFORM_FEE
-    ).toString();
+  const days = Math.max(
+    1,
+    Math.ceil(
+      (new Date(returnDate).getTime() - new Date(pickupDate).getTime()) /
+        (1000 * 60 * 60 * 24)
+    )
+  );
+  const rentalFee = (Number(listing.rental_fee) * days).toString();
+  const securityDeposit = (Number(listing.security_deposit) || 0).toString();
+  const totalAmount = (
+    Number(rentalFee) +
+    Number(securityDeposit) +
+    PLATFORM_FEE
+  ).toString();
 
-    // Check for duplicate booking
-    const { data: existing, error: checkError } = await supabase
-      .from("bookings")
-      .select("id")
-      .eq("listing_id", listing.id)
-      .eq("lessee_id", user?.id)
-      .eq("pickup_date", pickupDate)
-      .eq("return_date", returnDate);
+  // Check for duplicate booking
+  const { data: existing, error: checkError } = await supabase
+    .from("bookings")
+    .select("id")
+    .eq("listing_id", listing.id)
+    .eq("lessee_id", user?.id)
+    .eq("pickup_date", pickupDate)
+    .eq("return_date", returnDate);
 
-    if (checkError) {
-      alert("Error checking for existing bookings.");
-      return checkError;
-    }
-    if (existing && existing.length > 0) {
-      alert("You have already booked this listing for these dates.");
-      return { message: "Duplicate booking" };
-    }
+  if (checkError) {
+    alert("Error checking for existing bookings.");
+    return checkError;
+  }
+  if (existing && existing.length > 0) {
+    alert("You have already booked this listing for these dates.");
+    return { message: "Duplicate booking" };
+  }
 
-    const { error } = await supabase.from("bookings").insert([
-      {
-        listing_id: listing.id,
-        lessee_name: user?.name || "",
-        lessee_phone: user?.phone || "",
-        lessee_location: user?.location || "",
-        pickup_date: pickupDate,
-        return_date: returnDate,
-        rental_fee: rentalFee,
-        security_deposit: securityDeposit,
-        platform_fee: PLATFORM_FEE.toString(),
-        total_amount: totalAmount,
-        listing_title: listing.title,
-        category: String(listing.category_id),
-        subcategory: String(listing.subcategory_id),
-        lessee_id: user?.id,
-      },
-    ]);
-    return error;
-  };
+  // Insert booking and get the new booking id
+  const { data: bookingData, error } = await supabase.from("bookings").insert([
+    {
+      listing_id: listing.id,
+      lessee_name: user?.name || "",
+      lessee_phone: user?.phone || "",
+      lessee_location: user?.location || "",
+      pickup_date: pickupDate,
+      return_date: returnDate,
+      rental_fee: rentalFee,
+      security_deposit: securityDeposit,
+      platform_fee: PLATFORM_FEE.toString(),
+      total_amount: totalAmount,
+      listing_title: listing.title,
+      category: String(listing.category_id),
+      subcategory: String(listing.subcategory_id),
+      lessee_id: user?.id,
+    },
+  ]).select().single();
+
+  if (error || !bookingData) {
+    alert("Failed to create booking.");
+    return error || { message: "No booking data returned" };
+  }
+
+  // Insert notification for the lessor with booking_id as related_id
+  const { error: notifError } = await supabase.from("notifications").insert([
+    {
+      user_id: listing.user_id,
+      type: "booking_request",
+      message: `You have a new booking request for "${listing.title}"`,
+      booking_id: bookingData.id,
+      is_read: false,
+      created_at: new Date().toISOString(),
+    },
+  ]);
+
+  if (notifError) {
+    console.error("Notification insert error:", notifError);
+  }
+
+  return null;
+};
 
   if (!listing) {
     return (

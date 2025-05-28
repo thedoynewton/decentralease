@@ -26,6 +26,13 @@ interface Category {
   name: string;
 }
 
+interface Notification {
+  id: string;
+  message: string;
+  created_at: string;
+  is_read: boolean;
+}
+
 const PAGE_SIZE = 6;
 
 export default function LessorHome() {
@@ -47,6 +54,54 @@ export default function LessorHome() {
 
   // User id state
   const [userId, setUserId] = useState<string | null>(null);
+
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // Fetch notifications for dropdown and badge
+  useEffect(() => {
+    if (!userId) return;
+    const fetchNotifications = async () => {
+      const { data } = await supabase
+        .from("notifications")
+        .select("id,message,created_at,is_read")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      setNotifications(data || []);
+      setUnreadCount((data || []).filter((n) => !n.is_read).length);
+    };
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [userId]);
+
+  const handleNotificationClick = async () => {
+    setShowDropdown((prev) => !prev);
+    // Optionally, mark all as read when opening dropdown:
+    if (!showDropdown && userId) {
+      await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("user_id", userId)
+        .eq("is_read", false);
+      setUnreadCount(0);
+      // Optionally, refresh notifications after marking as read
+      const { data } = await supabase
+        .from("notifications")
+        .select("id,message,created_at,is_read")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      setNotifications(data || []);
+    }
+  };
+
+  const handleDropdownRoute = () => {
+    setShowDropdown(false);
+    router.push("/Lessor/Inbox");
+  };
 
   // Fetch user id for the connected wallet
   useEffect(() => {
@@ -154,21 +209,55 @@ export default function LessorHome() {
     setShowSendOffer(true);
   };
 
-  const handleNotificationClick = () => {
-    alert("Notifications are not implemented yet.");
-  };
-
   return (
     <Layout>
       <div className={styles.container}>
         <div className={styles.header}>
           <h1 className={styles.headerTitle}>Share & Earn</h1>
-          <button
-            className={styles.notificationButton}
-            onClick={handleNotificationClick}
-          >
-            <Bell size={24} />
-          </button>
+          <div style={{ position: "relative" }}>
+            <button
+              className={styles.notificationButton}
+              onClick={handleNotificationClick}
+              style={{ position: "relative" }}
+            >
+              <Bell size={24} />
+              {unreadCount > 0 && (
+                <span className={styles.notificationBadge}>{unreadCount}</span>
+              )}
+            </button>
+            {showDropdown && (
+              <div className={styles.notificationDropdown}>
+                <div className={styles.notificationDropdownHeader}>
+                  Notifications
+                </div>
+                {notifications.length === 0 && (
+                  <div className={styles.notificationDropdownEmpty}>
+                    No notifications
+                  </div>
+                )}
+                {notifications.map((n) => (
+                  <div
+                    key={n.id}
+                    className={styles.notificationDropdownItem}
+                    onClick={handleDropdownRoute}
+                  >
+                    <div className={styles.notificationDropdownMsg}>
+                      {n.message}
+                    </div>
+                    <div className={styles.notificationDropdownTime}>
+                      {new Date(n.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+                <div
+                  className={styles.notificationDropdownFooter}
+                  onClick={handleDropdownRoute}
+                >
+                  View all in Inbox
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className={styles.searchFilterRow}>

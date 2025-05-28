@@ -1,237 +1,316 @@
 .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 1rem;
-  }
-  
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    padding: 0.5rem 0;
-  }
-  
-  .headerTitle {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #1a202c;
-    margin: 0;
-  }
-  
-  .main {
-    min-height: 100vh;
-    padding: 4rem 0;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  .title {
-    margin: 0;
-    line-height: 1.15;
-    font-size: 4rem;
-    text-align: center;
-    color: #1a202c;
-    margin-bottom: 2rem;
-  }
-  
-  .connect {
-    margin-bottom: 2rem;
-  }
-  
-  .notificationButton {
-    background: none;
-    border: none;
-    padding: 0.5rem;
-    cursor: pointer;
-    color: #4a5568;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s;
-  }
-  
-  .notificationButton:hover {
-    background-color: #f7fafc;
-  }
-  
-  .searchFilterRow {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-  
-  .searchBar {
-    flex: 1;
-    padding: 0.75rem 1rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 1rem;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  
-  .searchBar:focus {
-    border-color: #4F46E5;
-  }
-  
-  .filterWrapper {
-    position: relative;
-  }
-  
-  .filterButton {
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 0.75rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: border-color 0.2s;
-  }
-  
-  .filterButton:hover {
-    border-color: #4F46E5;
-  }
-  
-  .categoryDropdown {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: 0.5rem;
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    min-width: 200px;
-    z-index: 50;
-  }
-  
-  .categoryItem {
-    padding: 0.75rem 1rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-  
-  .categoryItem:hover {
-    background-color: #f8fafc;
-  }
-  
-  .categoryItem.selected {
-    background-color: #EEF2FF;
-    color: #4F46E5;
-    font-weight: 500;
-  }
-  
-  .postsGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
-  }
-  
-  .postCard {
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
-    cursor: pointer;
-  }
-  
-  .postCard:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  }
-  
-  .imageWrapper {
-    aspect-ratio: 16/9;
-    overflow: hidden;
-    position: relative;
-  }
-  
-  .imageWrapper img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .postInfo {
-    padding: 1rem;
-  }
-  
-  .postInfo h3 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #1a202c;
-  }
-  
-  .location {
-    color: #4a5568;
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .dates {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    font-size: 0.875rem;
-    color: #718096;
-  }
-  
-  .loading {
-    text-align: center;
-    padding: 2rem;
-    color: #4a5568;
-    font-size: 1.1rem;
-  }
-  
-  .noPosts {
-    text-align: center;
-    padding: 2rem;
-    color: #4a5568;
-    font-size: 1.1rem;
-  }
-  
-  @media (max-width: 640px) {
-    .container {
-      padding: 1rem;
-    }
-  
-    .title {
-      font-size: 2.5rem;
-    }
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
 
-    .main {
-      padding: 2rem 0;
-    }
-  
-    .searchFilterRow {
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-    }
-  
-    .searchBar {
-      padding: 0.6rem 0.8rem;
-    }
-  
-    .filterButton {
-      padding: 0.6rem;
-    }
-  
-    .postsGrid {
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 1rem;
-    }
-  
-    .postInfo h3 {
-      font-size: 1rem;
-    }
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 0.5rem 0;
+}
+
+.headerTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0;
+}
+
+.main {
+  min-height: 100vh;
+  padding: 4rem 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.title {
+  margin: 0;
+  line-height: 1.15;
+  font-size: 4rem;
+  text-align: center;
+  color: #1a202c;
+  margin-bottom: 2rem;
+}
+
+.connect {
+  margin-bottom: 2rem;
+}
+
+.notificationButton {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: #4a5568;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.notificationButton:hover {
+  background-color: #f7fafc;
+}
+
+.searchFilterRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.searchBar {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.searchBar:focus {
+  border-color: #4f46e5;
+}
+
+.filterWrapper {
+  position: relative;
+}
+
+.filterButton {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s;
+}
+
+.filterButton:hover {
+  border-color: #4f46e5;
+}
+
+.categoryDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  z-index: 50;
+}
+
+.categoryItem {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.categoryItem:hover {
+  background-color: #f8fafc;
+}
+
+.categoryItem.selected {
+  background-color: #eef2ff;
+  color: #4f46e5;
+  font-weight: 500;
+}
+
+.postsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.postCard {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.postCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.imageWrapper {
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  position: relative;
+}
+
+.imageWrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.postInfo {
+  padding: 1rem;
+}
+
+.postInfo h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.location {
+  color: #4a5568;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.dates {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: #718096;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #4a5568;
+  font-size: 1.1rem;
+}
+
+.noPosts {
+  text-align: center;
+  padding: 2rem;
+  color: #4a5568;
+  font-size: 1.1rem;
+}
+
+.notificationButton {
+  position: relative;
+}
+
+.notificationBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #d32f2f;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 0.75em;
+  padding: 2px 6px;
+  min-width: 20px;
+  text-align: center;
+  font-weight: bold;
+  z-index: 2;
+}
+
+.notificationDropdown {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  width: 320px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  z-index: 100;
+  padding: 0.5rem 0;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notificationDropdownHeader {
+  font-weight: 600;
+  color: #1976d2;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.notificationDropdownEmpty {
+  padding: 1rem;
+  color: #888;
+  text-align: center;
+}
+
+.notificationDropdownItem {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f4fa;
+  transition: background 0.15s;
+}
+.notificationDropdownItem:hover {
+  background: #f5faff;
+}
+.notificationDropdownMsg {
+  font-size: 1em;
+  color: #222;
+}
+.notificationDropdownTime {
+  font-size: 0.85em;
+  color: #888;
+  margin-top: 2px;
+}
+.notificationDropdownFooter {
+  padding: 0.75rem 1rem;
+  text-align: center;
+  color: #1976d2;
+  font-weight: 500;
+  cursor: pointer;
+  border-top: 1px solid #e2e8f0;
+  background: #f7faff;
+  border-radius: 0 0 10px 10px;
+}
+.notificationDropdownFooter:hover {
+  background: #e3f0ff;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 1rem;
   }
+
+  .title {
+    font-size: 2.5rem;
+  }
+
+  .main {
+    padding: 2rem 0;
+  }
+
+  .searchFilterRow {
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .searchBar {
+    padding: 0.6rem 0.8rem;
+  }
+
+  .filterButton {
+    padding: 0.6rem;
+  }
+
+  .postsGrid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+  }
+
+  .postInfo h3 {
+    font-size: 1rem;
+  }
+}
