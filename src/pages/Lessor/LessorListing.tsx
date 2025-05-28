@@ -137,7 +137,7 @@ export default function LessorListing() {
       // Always create a new listing
       const result = await supabase.from("listings").insert([postData]).select().single();
       if (result.error) throw new Error(result.error.message);
-      router.push("/Lessor/Home");
+      router.push("/Lessor/Profile");
     } catch (error: any) {
       alert(error.message || "An unexpected error occurred");
     } finally {
@@ -330,6 +330,13 @@ export default function LessorListing() {
           >
             {loading ? "Creating..." : "Create Listing"}
           </button>
+          
+          {/* Success message */}
+          {(!loading && typeof window !== "undefined" && router.query.success === "true") && (
+            <div className={styles.successMessage}>
+              Listing created successfully!
+            </div>
+          )}
         </form>
       </div>
   );
