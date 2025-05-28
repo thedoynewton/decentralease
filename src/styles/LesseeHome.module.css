@@ -58,6 +58,85 @@
   .notificationButton:hover {
     background-color: #f7fafc;
   }
+
+  .notificationButton {
+  position: relative;
+}
+
+.notificationBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #d32f2f;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 0.75em;
+  padding: 2px 6px;
+  min-width: 20px;
+  text-align: center;
+  font-weight: bold;
+  z-index: 2;
+}
+
+.notificationDropdown {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  width: 320px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+  padding: 0.5rem 0;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notificationDropdownHeader {
+  font-weight: 600;
+  color: #1976d2;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.notificationDropdownEmpty {
+  padding: 1rem;
+  color: #888;
+  text-align: center;
+}
+
+.notificationDropdownItem {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f4fa;
+  transition: background 0.15s;
+}
+.notificationDropdownItem:hover {
+  background: #f5faff;
+}
+.notificationDropdownMsg {
+  font-size: 1em;
+  color: #222;
+}
+.notificationDropdownTime {
+  font-size: 0.85em;
+  color: #888;
+  margin-top: 2px;
+}
+.notificationDropdownFooter {
+  padding: 0.75rem 1rem;
+  text-align: center;
+  color: #1976d2;
+  font-weight: 500;
+  cursor: pointer;
+  border-top: 1px solid #e2e8f0;
+  background: #f7faff;
+  border-radius: 0 0 10px 10px;
+}
+.notificationDropdownFooter:hover {
+  background: #e3f0ff;
+}
   
   .searchFilterRow {
     display: flex;

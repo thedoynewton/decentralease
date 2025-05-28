@@ -178,15 +178,20 @@ export default function SendOffer({
     try {
       setLoading(true);
 
-      // TODO: Implement offer creation in database
-      console.log(
-        "Sending offer for listing:",
-        listing.title,
-        "ID:",
-        listing.id
-      );
-      console.log("To post:", postInfo.description, "ID:", postInfo.id);
-      console.log("User ID:", postInfo.user_id);
+      /// Insert notification for the post owner
+      if (postInfo.user_id) {
+        const message = `You received an offer for your post "${postInfo.description}" from listing "${listing.title}".`;
+        await supabase.from("notifications").insert([
+          {
+            user_id: postInfo.user_id,
+            type: "offer", // or another type string you use for offers
+            message,
+            booking_id: null, // or set to a booking id if you have one
+            listing_id: listing.id, // if you added listing_id as a foreign key
+            is_read: false,
+          },
+        ]);
+      }
 
       // Simulate success after delay
       setTimeout(() => {
