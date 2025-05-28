@@ -169,7 +169,7 @@ export default function LessorListing() {
             ← Back
           </button>
         </div>
-          <h1 className={styles.title}>Create Listing</h1>
+          <h1 className={styles.title}>Create Rental Listing</h1>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.imageUpload}>
