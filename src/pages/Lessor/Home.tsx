@@ -341,6 +341,16 @@ export default function LessorHome() {
                       : ""}
                   </span>
                 </div>
+                <button
+                  className={styles.sendOfferButton}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPost(post);
+                    setShowSendOffer(true);
+                  }}
+                >
+                  Send Offer
+                </button>
               </div>
             </div>
           ))}
