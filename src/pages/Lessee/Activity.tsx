@@ -5,7 +5,7 @@ import styles from "../../styles/LesseeActivity.module.css";
 import { useAccount } from "wagmi";
 import { supabase } from "../../../supabase/supabase-client";
 
-const STATUS_TABS = ["pending", "approved", "paid", "completed"];
+const STATUS_TABS = ["declined", "pending", "approved", "paid", "completed"];
 
 export default function Activity() {
   const { address } = useAccount();
