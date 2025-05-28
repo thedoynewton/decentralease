@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
-import { supabase } from '../supabase/supabase-client';
-import styles from '../src/styles/SendOffer.module.css';
+import { useState, useEffect } from "react";
+import { useAccount } from "wagmi";
+import { supabase } from "../supabase/supabase-client";
+import styles from "../src/styles/SendOffer.module.css";
 
 interface ListingItem {
   id: string;
@@ -31,19 +31,49 @@ interface SendOfferProps {
   postInfo: Post | null;
 }
 
-export default function SendOffer({ isOpen, onClose, postInfo }: SendOfferProps) {
+export default function SendOffer({
+  isOpen,
+  onClose,
+  postInfo,
+}: SendOfferProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [listings, setListings] = useState<ListingItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedListing, setSelectedListing] = useState<ListingItem | null>(null);
+  const [selectedListing, setSelectedListing] = useState<ListingItem | null>(
+    null
+  );
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const { address } = useAccount();
+  const [postUserName, setPostUserName] = useState<string | null>(null);
+
+  // Fetch the user name for the post's user_id
+  useEffect(() => {
+    const fetchUserName = async () => {
+      if (postInfo?.user_id) {
+        const { data, error } = await supabase
+          .from("users")
+          .select("name")
+          .eq("id", postInfo.user_id)
+          .single();
+        if (data && data.name) {
+          setPostUserName(data.name);
+        } else {
+          setPostUserName(null);
+        }
+      } else {
+        setPostUserName(null);
+      }
+    };
+    fetchUserName();
+  }, [postInfo?.user_id]);
 
   useEffect(() => {
     const fetchListings = async () => {
       if (!address) {
-        setError("No wallet connected. Please connect your wallet to view your listings.");
+        setError(
+          "No wallet connected. Please connect your wallet to view your listings."
+        );
         setLoading(false);
         return;
       }
@@ -56,7 +86,7 @@ export default function SendOffer({ isOpen, onClose, postInfo }: SendOfferProps)
         const { data: userData, error: userError } = await supabase
           .from("users")
           .select("id")
-          .eq("wallet_address", address.toLowerCase())
+          .eq("wallet_address", address)
           .single();
 
         if (userError) {
@@ -65,17 +95,21 @@ export default function SendOffer({ isOpen, onClose, postInfo }: SendOfferProps)
         }
 
         if (!userData || !userData.id) {
-          setError("User not found. Please ensure your wallet is correctly connected.");
+          setError(
+            "User not found. Please ensure your wallet is correctly connected."
+          );
           return;
         }
 
         // Fetch listings for the user
         const { data, error: fetchError } = await supabase
           .from("listings")
-          .select(`
+          .select(
+            `
             id, user_id, category_id, subcategory_id, title, rental_fee, 
             security_deposit, late_return_fee, conditions, description, image_url, created_at
-          `)
+          `
+          )
           .eq("user_id", userData.id)
           .order("created_at", { ascending: false });
 
@@ -102,7 +136,9 @@ export default function SendOffer({ isOpen, onClose, postInfo }: SendOfferProps)
           setListings(formattedListings);
         }
       } catch (err: any) {
-        setError(err instanceof Error ? err.message : "An unexpected error occurred");
+        setError(
+          err instanceof Error ? err.message : "An unexpected error occurred"
+        );
       } finally {
         setLoading(false);
       }
@@ -116,7 +152,9 @@ export default function SendOffer({ isOpen, onClose, postInfo }: SendOfferProps)
   const handleListingPress = (item: ListingItem) => {
     if (!postInfo) {
       console.error("No post information available");
-      alert("Cannot send offer. Post information is missing. Please try again.");
+      alert(
+        "Cannot send offer. Post information is missing. Please try again."
+      );
       return;
     }
 
@@ -141,7 +179,12 @@ export default function SendOffer({ isOpen, onClose, postInfo }: SendOfferProps)
       setLoading(true);
 
       // TODO: Implement offer creation in database
-      console.log("Sending offer for listing:", listing.title, "ID:", listing.id);
+      console.log(
+        "Sending offer for listing:",
+        listing.title,
+        "ID:",
+        listing.id
+      );
       console.log("To post:", postInfo.description, "ID:", postInfo.id);
       console.log("User ID:", postInfo.user_id);
 
@@ -168,10 +211,12 @@ export default function SendOffer({ isOpen, onClose, postInfo }: SendOfferProps)
       <div className={styles.modal}>
         {/* Header */}
         <div className={styles.header}>
-          <button className={styles.closeButton} onClick={onClose}>&times;</button>
+          <button className={styles.closeButton} onClick={onClose}>
+            &times;
+          </button>
           {postInfo && (
             <div className={styles.postInfo}>
-              <h2>Select a listing to offer to {postInfo.user_name || "User"}</h2>
+              <h2>Select a listing to offer to {postUserName || "User"}</h2>
               <p>{postInfo.description || "No description"}</p>
             </div>
           )}
@@ -192,7 +237,9 @@ export default function SendOffer({ isOpen, onClose, postInfo }: SendOfferProps)
         {loading && (
           <div className={styles.loadingContainer}>
             <div className={styles.spinner}></div>
-            <p>{selectedListing ? "Sending offer..." : "Loading listings..."}</p>
+            <p>
+              {selectedListing ? "Sending offer..." : "Loading listings..."}
+            </p>
           </div>
         )}
 
@@ -228,9 +275,7 @@ export default function SendOffer({ isOpen, onClose, postInfo }: SendOfferProps)
                     <h3>{item.title}</h3>
                     <p className={styles.rentalFee}>{item.rental_fee} / day</p>
                   </div>
-                  <button className={styles.sendButton}>
-                    Send Offer
-                  </button>
+                  <button className={styles.sendButton}>Send Offer</button>
                 </div>
               ))
             )}
@@ -243,7 +288,9 @@ export default function SendOffer({ isOpen, onClose, postInfo }: SendOfferProps)
             <div className={styles.successContent}>
               <div className={styles.successIcon}>✓</div>
               <h3>Offer Sent Successfully!</h3>
-              <p>Your offer has been sent to {postInfo?.user_name || "the user"}.</p>
+              <p>
+                Your offer has been sent to {postInfo?.user_name || "the user"}.
+              </p>
               <button
                 className={styles.successButton}
                 onClick={() => {
