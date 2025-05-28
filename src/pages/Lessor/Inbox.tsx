@@ -71,6 +71,29 @@ export default function Inbox() {
 
   const [bookings, setBookings] = useState<Booking[]>([]);
 
+  // Add these handlers above the return statement
+  const handleApprove = async () => {
+    if (!selectedBooking) return;
+    // Update booking status to 'approved'
+    await supabase
+      .from("bookings")
+      .update({ status: "approved" })
+      .eq("id", selectedBooking.id);
+    setSelectedBooking({ ...selectedBooking, status: "approved" });
+    // Optionally, refetch bookings here
+  };
+
+  const handleDecline = async () => {
+    if (!selectedBooking) return;
+    // Update booking status to 'declined'
+    await supabase
+      .from("bookings")
+      .update({ status: "declined" })
+      .eq("id", selectedBooking.id);
+    setSelectedBooking({ ...selectedBooking, status: "declined" });
+    // Optionally, refetch bookings here
+  };
+
   // Fetch all booking_request notifications for this lessor
   useEffect(() => {
     async function fetchBookingNotifications() {
@@ -278,7 +301,6 @@ export default function Inbox() {
           <h2 className={styles.sidebarTitle}>Inbox</h2>
           {loading && <p>Loading...</p>}
           {error && <p className={styles.error}>Error: {error}</p>}
-          {!isConnected && <p>Connect your wallet to view bookings.</p>}
           {isConnected && !loading && !error && bookings.length === 0 && (
             <p>No booking requests yet.</p>
           )}
@@ -360,12 +382,35 @@ export default function Inbox() {
                 messagesEndRef={messagesEndRef}
                 timeAgo={timeAgo}
               />
-              <MessageInput
-                messageInput={messageInput}
-                setMessageInput={setMessageInput}
-                sending={sending}
-                onSend={handleSendMessage}
-              />
+              {selectedBooking.status === "Pending" ? (
+                <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+                  <button
+                    className={styles.approveButton}
+                    onClick={handleApprove}
+                  >
+                    Approve
+                  </button>
+                  <button
+                    className={styles.declineButton}
+                    onClick={handleDecline}
+                  >
+                    Decline
+                  </button>
+                </div>
+              ) : selectedBooking.status === "declined" ? (
+                <div
+                  style={{ marginTop: 16, color: "#e11d48", fontWeight: 500 }}
+                >
+                  The booking request is declined.
+                </div>
+              ) : (
+                <MessageInput
+                  messageInput={messageInput}
+                  setMessageInput={setMessageInput}
+                  sending={sending}
+                  onSend={handleSendMessage}
+                />
+              )}
             </div>
           </div>
         )}
@@ -412,12 +457,35 @@ export default function Inbox() {
                 messagesEndRef={messagesEndRef}
                 timeAgo={timeAgo}
               />
-              <MessageInput
-                messageInput={messageInput}
-                setMessageInput={setMessageInput}
-                sending={sending}
-                onSend={handleSendMessage}
-              />
+              {selectedBooking.status === "Pending" ? (
+                <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+                  <button
+                    className={styles.approveButton}
+                    onClick={handleApprove}
+                  >
+                    Approve
+                  </button>
+                  <button
+                    className={styles.declineButton}
+                    onClick={handleDecline}
+                  >
+                    Decline
+                  </button>
+                </div>
+              ) : selectedBooking.status === "declined" ? (
+                <div
+                  style={{ marginTop: 16, color: "#e11d48", fontWeight: 500 }}
+                >
+                  The booking request is declined.
+                </div>
+              ) : (
+                <MessageInput
+                  messageInput={messageInput}
+                  setMessageInput={setMessageInput}
+                  sending={sending}
+                  onSend={handleSendMessage}
+                />
+              )}
             </div>
           </div>
         )}

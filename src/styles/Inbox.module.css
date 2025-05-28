@@ -295,3 +295,37 @@
   box-shadow: 0 2px 16px rgba(0,0,0,0.3);
   background: #fff;
 }
+
+.approveButton {
+  background: #22c55e;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.approveButton:hover,
+.approveButton:focus {
+  background: #16a34a;
+}
+
+.declineButton {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.declineButton:hover,
+.declineButton:focus {
+  background: #b91c1c;
+}
