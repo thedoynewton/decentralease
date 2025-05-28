@@ -374,6 +374,7 @@ export default function LessorHome() {
             selectedPost
               ? {
                   id: selectedPost.id,
+                  title: selectedPost.title,
                   description: selectedPost.description,
                   user_id: selectedPost.user_id,
                 }

@@ -20,6 +20,7 @@ interface ListingItem {
 
 interface Post {
   id: string;
+  title: string;
   description: string;
   user_name?: string;
   user_id?: string;
@@ -158,6 +159,11 @@ export default function SendOffer({
       return;
     }
 
+    // Ask for confirmation before sending the offer
+    const confirm = window.confirm(
+      `Are you sure you want to send an offer for your listing "${item.title}""?`);
+    if (!confirm) return;
+
     setSelectedListing(item);
     handleSendOffer(item);
   };
@@ -180,14 +186,25 @@ export default function SendOffer({
 
       /// Insert notification for the post owner
       if (postInfo.user_id) {
-        const message = `You received an offer for your post "${postInfo.description}" from listing "${listing.title}".`;
+        // Fetch lessor name from the connected user's profile
+        let lessorName = "A lessor";
+        const { data: lessorData } = await supabase
+          .from("users")
+          .select("name")
+          .eq("wallet_address", address)
+          .single();
+        if (lessorData && lessorData.name) {
+          lessorName = lessorData.name;
+        }
+
+        const message = `${lessorName} sent you an offer for your post "${postInfo.title}". Click this to view.`;
         await supabase.from("notifications").insert([
           {
             user_id: postInfo.user_id,
-            type: "offer", // or another type string you use for offers
+            type: "offer",
             message,
-            booking_id: null, // or set to a booking id if you have one
-            listing_id: listing.id, // if you added listing_id as a foreign key
+            booking_id: null,
+            listing_id: listing.id,
             is_read: false,
           },
         ]);
