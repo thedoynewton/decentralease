@@ -60,3 +60,12 @@
   box-shadow: 0 2px 16px rgba(0,0,0,0.3);
   background: #fff;
 }
+
+.bookingRequestMessage {
+  background: #e3f0ff;
+  color: #1976d2;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-weight: 500;
+}

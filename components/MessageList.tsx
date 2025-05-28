@@ -8,6 +8,7 @@ interface Message {
   content: string;
   created_at: string;
   image_url?: string | null;
+  isNotification?: boolean;
 }
 
 interface MessageListProps {
@@ -32,38 +33,45 @@ export default function MessageList({
           <p>No messages yet.</p>
         </div>
       )}
-      {messages.map((msg) => (
-        <div
-          key={msg.id}
-          className={
-            msg.sender_id === address
-              ? styles.messageSent
-              : styles.messageReceived
-          }
-        >
-          {/* Show image if image_url exists */}
-          {msg.image_url && (
-            <>
-              <img
-                src={msg.image_url}
-                alt="chat"
-                style={{
-                  maxWidth: 180,
-                  maxHeight: 180,
-                  borderRadius: 8,
-                  marginBottom: msg.content ? 4 : 0,
-                  display: "block",
-                  cursor: "pointer",
-                }}
-                onClick={() => setPreviewUrl(msg.image_url || null)}
-              />
-            </>
-          )}
-          {/* Show text if content exists */}
-          {msg.content && <span>{msg.content}</span>}
-          <div className={styles.messageTime}>{timeAgo(msg.created_at)}</div>
-        </div>
-      ))}
+      {messages.map((msg) =>
+        msg.isNotification ? (
+          <div key={msg.id} className={styles.bookingRequestMessage}>
+            <span>{msg.content}</span>
+            <div className={styles.messageTime}>{timeAgo(msg.created_at)}</div>
+          </div>
+        ) : (
+          <div
+            key={msg.id}
+            className={
+              msg.sender_id === address
+                ? styles.messageSent
+                : styles.messageReceived
+            }
+          >
+            {/* Show image if image_url exists */}
+            {msg.image_url && (
+              <>
+                <img
+                  src={msg.image_url}
+                  alt="chat"
+                  style={{
+                    maxWidth: 180,
+                    maxHeight: 180,
+                    borderRadius: 8,
+                    marginBottom: msg.content ? 4 : 0,
+                    display: "block",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => setPreviewUrl(msg.image_url || null)}
+                />
+              </>
+            )}
+            {/* Show text if content exists */}
+            {msg.content && <span>{msg.content}</span>}
+            <div className={styles.messageTime}>{timeAgo(msg.created_at)}</div>
+          </div>
+        )
+      )}
       <div ref={messagesEndRef} />
 
       {/* Image preview modal */}

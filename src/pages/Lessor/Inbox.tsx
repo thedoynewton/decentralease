@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import styles from "../../styles/Inbox.module.css";
 import { useAccount } from "wagmi";
 import { supabase } from "../../../supabase/supabase-client";
@@ -11,8 +11,8 @@ interface Booking {
   id: string;
   status: string;
   lessee_id: string;
-  lessorName?: string;
-  lessorProfileImageUrl?: string;
+  lesseeName?: string;
+  lesseeProfileImageUrl?: string;
   updated_at: string;
   total_amount?: number;
   pickup_date?: string;
@@ -55,7 +55,6 @@ function useIsMobile(breakpoint = 768) {
 
 export default function Inbox() {
   const { address, isConnected } = useAccount();
-  const [approvedBookings, setApprovedBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
@@ -67,6 +66,155 @@ export default function Inbox() {
   const [messageInput, setMessageInput] = useState("");
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const [bookingNotifications, setBookingNotifications] = useState<any[]>([]);
+
+  const [bookings, setBookings] = useState<Booking[]>([]);
+
+  // Fetch all booking_request notifications for this lessor
+  useEffect(() => {
+    async function fetchBookingNotifications() {
+      setLoading(true);
+      if (!address) {
+        setBookingNotifications([]);
+        setLoading(false);
+        return;
+      }
+      const { data: userData } = await supabase
+        .from("users")
+        .select("id")
+        .eq("wallet_address", address)
+        .single();
+      if (!userData) {
+        setBookingNotifications([]);
+        setLoading(false);
+        return;
+      }
+      const { data } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", userData.id)
+        .eq("type", "booking_request")
+        .order("created_at", { ascending: false });
+      setBookingNotifications(data || []);
+      setLoading(false);
+    }
+    fetchBookingNotifications();
+  }, [address]);
+
+  useEffect(() => {
+    async function fetchBookings() {
+      setLoading(true);
+      setError(null);
+
+      if (!isConnected || !address) {
+        setBookings([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get lessor's user id
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("wallet_address", address)
+        .single();
+
+      if (userError) {
+        setError(`Error fetching user ID: ${userError.message}`);
+        setBookings([]);
+        setLoading(false);
+        return;
+      }
+
+      if (!userData) {
+        setError("No user found for the connected wallet address.");
+        setBookings([]);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch all bookings where the listing belongs to the connected user (lessor)
+      const { data, error: bookingsError } = await supabase
+        .from("bookings")
+        .select(
+          `
+          *,
+          listings (
+            user_id,
+            title
+          ),
+          users (
+            id,
+            name,
+            profile_image_url
+            )
+          `
+        )
+        .eq("listings.user_id", userData.id);
+
+      if (bookingsError) {
+        setError(`Error fetching bookings: ${bookingsError.message}`);
+        setBookings([]);
+        setLoading(false);
+        return;
+      }
+
+      const bookingsWithTitle =
+        data
+          ?.filter(
+            (booking: any) =>
+              booking.listings && booking.listings.user_id === userData.id
+          )
+          .map((booking: any) => ({
+            ...booking,
+            listing_title: booking.listings?.title || "N/A",
+            lesseeName: booking.users?.name || "Unknown",
+            lesseeProfileImageUrl: booking.users?.profile_image_url || null,
+          })) || [];
+
+      const prioritizedBookings = bookingsWithTitle.sort((a: any, b: any) => {
+        const aNotif = bookingNotifications.find(
+          (n) =>
+            n.booking_id === a.id && n.type === "booking_request" && !n.is_read
+        );
+        const bNotif = bookingNotifications.find(
+          (n) =>
+            n.booking_id === b.id && n.type === "booking_request" && !n.is_read
+        );
+        if (aNotif && !bNotif) return -1;
+        if (!aNotif && bNotif) return 1;
+        return 0;
+      });
+
+      setBookings(prioritizedBookings);
+      setLoading(false);
+    }
+
+    fetchBookings();
+  }, [address, isConnected, bookingNotifications]);
+
+  // Combine booking request notification with messages for the selected booking
+  const combinedMessages = useMemo(() => {
+    if (!selectedBooking) return messages;
+    const notif = bookingNotifications.find(
+      (n) => n.booking_id === selectedBooking.id
+    );
+    if (notif) {
+      return [
+        {
+          id: notif.id,
+          booking_id: notif.booking_id,
+          sender_id: "system",
+          content: notif.message,
+          created_at: notif.created_at,
+          isNotification: true,
+        },
+        ...messages,
+      ];
+    }
+    return messages;
+  }, [selectedBooking, bookingNotifications, messages]);
 
   async function handleSendMessage(e: React.FormEvent, imageUrl?: string) {
     e.preventDefault();
@@ -114,90 +262,6 @@ export default function Inbox() {
     fetchMessages();
   }, [selectedBooking]);
 
-  useEffect(() => {
-  async function fetchPendingBookings() {
-    if (!isConnected || !address) {
-      setLoading(false);
-      setApprovedBookings([]);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Get lessor's user id
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("id")
-        .eq("wallet_address", address)
-        .single();
-
-      if (userError) {
-        throw new Error(`Error fetching user ID: ${userError.message}`);
-      }
-
-      if (!userData) {
-        setApprovedBookings([]);
-        setLoading(false);
-        setError("No user found for the connected wallet address.");
-        return;
-      }
-
-      // Fetch bookings where the listing's user_id matches the lessor's id and status is 'pending'
-      const { data, error: bookingsError } = await supabase
-        .from("bookings")
-        .select(
-          `
-          *,
-          listings (
-            user_id,
-            title,
-            users (
-              name,
-              profile_image_url
-            )
-          )
-          `
-        )
-        .eq("status", "pending")
-        .in("listings.user_id", [userData.id]);
-
-      if (bookingsError) {
-        throw new Error(
-          `Error fetching pending bookings: ${bookingsError.message}`
-        );
-      }
-
-      const bookingsWithLessor =
-        data?.map((booking: any) => ({
-          ...booking,
-          lessorName: booking.listings?.users?.name || "N/A",
-          lessorProfileImageUrl:
-            booking.listings?.users?.profile_image_url || null,
-          updated_at: booking.updated_at,
-          total_amount: booking.total_amount,
-          pickup_date: booking.pickup_date,
-          return_date: booking.return_date,
-          listing_title: booking.listings?.title || "N/A",
-        })) || [];
-
-      setApprovedBookings(bookingsWithLessor);
-      if (bookingsWithLessor.length > 0 && !isMobile) {
-        setSelectedBooking(bookingsWithLessor[0]);
-      }
-    } catch (err: any) {
-      console.error("Error fetching pending bookings:", err.message);
-      setError(`Failed to fetch pending bookings: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  fetchPendingBookings();
-  // eslint-disable-next-line
-}, [address, isConnected]);
-
   // Open modal on mobile when a booking is selected
   const handleBookingClick = (booking: Booking) => {
     setSelectedBooking(booking);
@@ -215,12 +279,11 @@ export default function Inbox() {
           {loading && <p>Loading...</p>}
           {error && <p className={styles.error}>Error: {error}</p>}
           {!isConnected && <p>Connect your wallet to view bookings.</p>}
-          {isConnected &&
-            !loading &&
-            !error &&
-            approvedBookings.length === 0 && <p>No booking requests yet.</p>}
+          {isConnected && !loading && !error && bookings.length === 0 && (
+            <p>No booking requests yet.</p>
+          )}
           <ul className={styles.bookingList}>
-            {approvedBookings.map((booking) => (
+            {bookings.map((booking) => (
               <li
                 key={booking.id}
                 className={`${styles.bookingItem} ${
@@ -229,10 +292,10 @@ export default function Inbox() {
                 onClick={() => handleBookingClick(booking)}
               >
                 <div className={styles.avatar}>
-                  {booking.lessorProfileImageUrl ? (
+                  {booking.lesseeProfileImageUrl ? (
                     <img
-                      src={booking.lessorProfileImageUrl}
-                      alt={booking.lessorName}
+                      src={booking.lesseeProfileImageUrl}
+                      alt={booking.lesseeName}
                       style={{
                         width: "100%",
                         height: "100%",
@@ -241,11 +304,11 @@ export default function Inbox() {
                       }}
                     />
                   ) : (
-                    booking.lessorName?.[0] || "?"
+                    booking.lesseeName?.[0] || "?"
                   )}
                 </div>
                 <div>
-                  <div className={styles.lessorName}>{booking.lessorName}</div>
+                  <div className={styles.lessorName}>{booking.lesseeName}</div>
                   <div style={{ fontSize: "0.85em", color: "#888" }}>
                     {timeAgo(booking.updated_at)}
                   </div>
@@ -266,10 +329,10 @@ export default function Inbox() {
                   marginBottom: 16,
                 }}
               >
-                {selectedBooking.lessorProfileImageUrl ? (
+                {selectedBooking.lesseeProfileImageUrl ? (
                   <img
-                    src={selectedBooking.lessorProfileImageUrl}
-                    alt={selectedBooking.lessorName}
+                    src={selectedBooking.lesseeProfileImageUrl}
+                    alt={selectedBooking.lesseeName}
                     style={{
                       width: 48,
                       height: 48,
@@ -280,11 +343,11 @@ export default function Inbox() {
                   />
                 ) : (
                   <div className={styles.avatar} style={{ marginRight: 16 }}>
-                    {selectedBooking.lessorName?.[0] || "?"}
+                    {selectedBooking.lesseeName?.[0] || "?"}
                   </div>
                 )}
                 <div>
-                  <div>{selectedBooking.lessorName}</div>
+                  <div>{selectedBooking.lesseeName}</div>
                 </div>
               </div>
               <BookingSummaryCard booking={selectedBooking} />
@@ -292,7 +355,7 @@ export default function Inbox() {
                 <b>Status:</b> {selectedBooking.status}
               </p>
               <MessageList
-                messages={messages}
+                messages={combinedMessages}
                 address={address}
                 messagesEndRef={messagesEndRef}
                 timeAgo={timeAgo}
@@ -322,21 +385,21 @@ export default function Inbox() {
                 &#8592;
               </button>
               <div className={styles.lessorProfileContainer}>
-                {selectedBooking.lessorProfileImageUrl ? (
+                {selectedBooking.lesseeProfileImageUrl ? (
                   <img
-                    src={selectedBooking.lessorProfileImageUrl}
-                    alt={selectedBooking.lessorName}
+                    src={selectedBooking.lesseeProfileImageUrl}
+                    alt={selectedBooking.lesseeName}
                     className={styles.lessorProfileImage}
                   />
                 ) : (
                   <div
                     className={`${styles.avatar} ${styles.lessorProfileAvatar}`}
                   >
-                    {selectedBooking.lessorName?.[0] || "?"}
+                    {selectedBooking.lesseeName?.[0] || "?"}
                   </div>
                 )}
                 <div className={styles.lessorProfileName}>
-                  <div>{selectedBooking.lessorName}</div>
+                  <div>{selectedBooking.lesseeName}</div>
                 </div>
               </div>
               <BookingSummaryCard booking={selectedBooking} />
@@ -344,7 +407,7 @@ export default function Inbox() {
                 <b>Status:</b> {selectedBooking.status}
               </p>
               <MessageList
-                messages={messages}
+                messages={combinedMessages}
                 address={address}
                 messagesEndRef={messagesEndRef}
                 timeAgo={timeAgo}
