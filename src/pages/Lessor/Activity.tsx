@@ -4,8 +4,10 @@ import styles from "../../styles/LesseeActivity.module.css";
 import { useAccount } from "wagmi";
 import { supabase } from "../../../supabase/supabase-client";
 import Layout from "../../../components/LessorLayout";
-import ConfirmReturnModal from "../../../components/ConfirmReturnModal";
 import AcknowledgeModal from "../../../components/AcknowledgeModal";
+import ReleasePaymentButton from "../../../components/ReleasePaymentButton";
+import InputDamageFee from "../../../components/InputDamageFee";
+import CollectFundButton from "../../../components/CollectFundButton";
 
 const STATUS_TABS = ["approved", "paid", "completed"];
 
@@ -57,6 +59,7 @@ export default function Activity() {
         lessor_confirmed,
         has_damage,
         is_acknowledge,
+        isDamage_paid,
         listing_id (
           title,
           image_url,
@@ -91,38 +94,6 @@ export default function Activity() {
     (b) => b.status.toLowerCase() === activeTab.toLowerCase()
   );
 
-  // When opening the modal, pass confirmation count and has_damage
-  const handleConfirmReturn = (booking: any) => {
-    const confirmationCount =
-      (booking.lessee_confirmed ? 1 : 0) + (booking.lessor_confirmed ? 1 : 0);
-    setModalBooking({ ...booking, confirmationCount });
-  };
-
-  // Handle modal actions
-  const handleModalAction = async (hasDamage: boolean) => {
-    if (!modalBooking) return;
-    setModalLoading(true);
-    // Update both lessor_confirmed and has_damage fields
-    const { error } = await supabase
-      .from("bookings")
-      .update({ lessor_confirmed: true, has_damage: hasDamage })
-      .eq("id", modalBooking.id);
-
-    setModalLoading(false);
-    setModalBooking(null);
-
-    if (error) {
-      alert("Failed to confirm return: " + error.message);
-    } else {
-      alert(
-        hasDamage
-          ? "Marked as returned with damage."
-          : "Return confirmed with no damage."
-      );
-      fetchUserBookings();
-    }
-  };
-
   const handleAcknowledge = async () => {
     if (!ackModalBooking) return;
     setAckLoading(true);
@@ -133,30 +104,6 @@ export default function Activity() {
       .update({ lessor_confirmed: true, is_acknowledge: true })
       .eq("id", ackModalBooking.id);
 
-    if (!error) {
-      // Optionally, check if all conditions are met to set status to completed
-      const { data: updatedBooking } = await supabase
-        .from("bookings")
-        .select(
-          "lessee_confirmed, lessor_confirmed, has_damage, is_acknowledge"
-        )
-        .eq("id", ackModalBooking.id)
-        .single();
-
-      if (
-        updatedBooking &&
-        updatedBooking.lessee_confirmed &&
-        updatedBooking.lessor_confirmed &&
-        updatedBooking.has_damage !== null &&
-        updatedBooking.is_acknowledge
-      ) {
-        await supabase
-          .from("bookings")
-          .update({ status: "completed" })
-          .eq("id", ackModalBooking.id);
-      }
-    }
-
     setAckLoading(false);
     setAckModalBooking(null);
 
@@ -164,6 +111,49 @@ export default function Activity() {
       alert("Failed to acknowledge: " + error.message);
     } else {
       alert("Acknowledged successfully.");
+      fetchUserBookings();
+    }
+  };
+
+  const handleReleasePayment = async (bookingId: string) => {
+    const { error } = await supabase
+      .from("bookings")
+      .update({ status: "completed" })
+      .eq("id", bookingId);
+
+    if (error) {
+      alert("Failed to release payment: " + error.message);
+    } else {
+      alert("Payment released!");
+      fetchUserBookings();
+    }
+  };
+
+  // Add this function:
+  const handleSubmitDamageFee = async (bookingId: string, fee: number) => {
+    const { error } = await supabase
+      .from("bookings")
+      .update({ damage_fee: fee })
+      .eq("id", bookingId);
+
+    if (error) {
+      alert("Failed to submit damage fee: " + error.message);
+    } else {
+      alert(`Damage fee submitted: ${fee}`);
+      fetchUserBookings();
+    }
+  };
+
+  const handleCollectFund = async (bookingId: string) => {
+    const { error } = await supabase
+      .from("bookings")
+      .update({ status: "completed" })
+      .eq("id", bookingId);
+
+    if (error) {
+      alert("Failed to collect fund: " + error.message);
+    } else {
+      alert("Funds collected! Booking completed.");
       fetchUserBookings();
     }
   };
@@ -221,6 +211,8 @@ export default function Activity() {
                         : null;
                       const lesseeConfirmed = booking.lessee_confirmed;
                       const lessorConfirmed = booking.lessor_confirmed;
+                      const hasDamage = booking.has_damage;
+                      const isAcknowledge = booking.is_acknowledge;
                       const totalConfirmed =
                         (lesseeConfirmed ? 1 : 0) + (lessorConfirmed ? 1 : 0);
 
@@ -230,6 +222,51 @@ export default function Activity() {
                             <div style={{ marginBottom: 8, fontWeight: 500 }}>
                               Confirmation: {totalConfirmed}/2
                             </div>
+                            {/* Only show ReleasePaymentButton if all conditions are met */}
+                            {lesseeConfirmed &&
+                              lessorConfirmed &&
+                              hasDamage === false &&
+                              isAcknowledge && (
+                                <ReleasePaymentButton
+                                  onClick={() =>
+                                    handleReleasePayment(booking.id)
+                                  }
+                                />
+                              )}
+
+                            {lesseeConfirmed &&
+                              lessorConfirmed &&
+                              hasDamage === true &&
+                              isAcknowledge && (
+                                <>
+                                  {booking.isDamage_paid ? (
+                                    <CollectFundButton
+                                      onClick={() =>
+                                        handleCollectFund(booking.id)
+                                      }
+                                    />
+                                  ) : (
+                                    <>
+                                      <InputDamageFee
+                                        onSubmit={(fee) =>
+                                          handleSubmitDamageFee(booking.id, fee)
+                                        }
+                                      />
+                                      <span
+                                        style={{
+                                          display: "block",
+                                          marginTop: 8,
+                                          color: "#eab308",
+                                          fontWeight: 500,
+                                        }}
+                                      >
+                                        Input the amount of damage fee
+                                      </span>
+                                    </>
+                                  )}
+                                </>
+                              )}
+
                             {/* Show Acknowledge button if has_damage is set and not acknowledged */}
                             {booking.has_damage !== null &&
                             !booking.is_acknowledge ? (
@@ -252,13 +289,17 @@ export default function Activity() {
                                 </span>
                               )
                             )}
-                            {totalConfirmed === 2 && (
-                              <span
-                                style={{ color: "#43a047", fontWeight: 500 }}
-                              >
-                                Both parties confirmed. Booking completed!
-                              </span>
-                            )}
+                            {lesseeConfirmed &&
+                              lessorConfirmed &&
+                              hasDamage === false &&
+                              isAcknowledge && (
+                                <span
+                                  style={{ color: "#43a047", fontWeight: 500 }}
+                                >
+                                  Both parties confirmed. You can now release
+                                  payment.
+                                </span>
+                              )}
                           </div>
                         );
                       }

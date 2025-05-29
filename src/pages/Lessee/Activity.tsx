@@ -53,6 +53,8 @@ export default function Activity() {
           lessor_confirmed,
           has_damage,
           is_acknowledge,
+          damage_fee,
+          isDamage_paid,
           listing_id (
             title,
             image_url,
@@ -157,32 +159,8 @@ export default function Activity() {
     setModalLoading(true);
     const { error } = await supabase
       .from("bookings")
-      .update({ lessee_confirmed: true, is_acknowledge: true })
+      .update({ lessee_confirmed: true })
       .eq("id", modalBooking.id);
-
-    if (!error) {
-      // Fetch the latest booking to check all conditions
-      const { data: updatedBooking } = await supabase
-        .from("bookings")
-        .select(
-          "lessee_confirmed, lessor_confirmed, has_damage, is_acknowledge"
-        )
-        .eq("id", modalBooking.id)
-        .single();
-
-      if (
-        updatedBooking &&
-        updatedBooking.lessee_confirmed &&
-        updatedBooking.lessor_confirmed &&
-        updatedBooking.has_damage !== null &&
-        updatedBooking.is_acknowledge
-      ) {
-        await supabase
-          .from("bookings")
-          .update({ status: "completed" })
-          .eq("id", modalBooking.id);
-      }
-    }
 
     setModalLoading(false);
     setModalBooking(null);
@@ -257,6 +235,20 @@ export default function Activity() {
       fetchUserBookings();
     }
     setUploadingId(null);
+  };
+
+  const handlePayDamageFee = async (bookingId: string) => {
+    const { error } = await supabase
+      .from("bookings")
+      .update({ isDamage_paid: true })
+      .eq("id", bookingId);
+
+    if (error) {
+      alert("Failed to pay damage fee: " + error.message);
+    } else {
+      alert("Damage fee paid!");
+      fetchUserBookings();
+    }
   };
 
   return (
@@ -355,24 +347,56 @@ export default function Activity() {
                                   </button>
                                 )}
                                 {isAcknowledge && (
-                                  <span
-                                    style={{
-                                      color: "#43a047",
-                                      fontWeight: 500,
-                                    }}
-                                  >
-                                    Waiting for lessor acknowledgement...
-                                  </span>
-                                )}
-                                {totalConfirmed === 2 && (
-                                  <span
-                                    style={{
-                                      color: "#43a047",
-                                      fontWeight: 500,
-                                    }}
-                                  >
-                                    Both parties confirmed. Booking completed!
-                                  </span>
+                                  <>
+                                    {booking.damage_fee &&
+                                    !isNaN(parseFloat(booking.damage_fee)) &&
+                                    parseFloat(booking.damage_fee) > 0 ? (
+                                      <div style={{ marginTop: 8 }}>
+                                        <span
+                                          style={{
+                                            color: "#eab308",
+                                            fontWeight: 500,
+                                          }}
+                                        >
+                                          Damage Fee:{" "}
+                                          {parseFloat(booking.damage_fee)} ETH
+                                        </span>
+                                        {booking.isDamage_paid ? (
+                                          <span
+                                            style={{
+                                              color: "#43a047",
+                                              fontWeight: 500,
+                                              marginLeft: 12,
+                                            }}
+                                          >
+                                            Damage fee paid successfully!
+                                          </span>
+                                        ) : (
+                                          <button
+                                            className={styles.payButton}
+                                            style={{
+                                              background: "#eab308",
+                                              marginLeft: 12,
+                                            }}
+                                            onClick={() =>
+                                              handlePayDamageFee(booking.id)
+                                            }
+                                          >
+                                            Pay Damage Fee
+                                          </button>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span
+                                        style={{
+                                          color: "#43a047",
+                                          fontWeight: 500,
+                                        }}
+                                      >
+                                        No damage fee required.
+                                      </span>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             );
