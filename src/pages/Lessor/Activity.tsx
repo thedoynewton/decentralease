@@ -7,8 +7,8 @@ import Layout from "../../../components/LessorLayout";
 import AcknowledgeModal from "../../../components/AcknowledgeModal";
 import ReleasePaymentButton from "../../../components/ReleasePaymentButton";
 import InputDamageFee from "../../../components/InputDamageFee";
-import CollectFundButton from "../../../components/CollectFundButton";
-import CollectAllFundsButton from "../../../components/CollectAllFundsButton";
+// import CollectFundButton from "../../../components/CollectFundButton";
+// import CollectAllFundsButton from "../../../components/CollectAllFundsButton";
 
 const STATUS_TABS = ["approved", "paid", "completed"];
 
@@ -60,6 +60,7 @@ export default function Activity() {
         is_acknowledge,
         isDamage_paid,
         input_damageFee,
+        remaining_deposit,
         listing_id (
           title,
           image_url,
@@ -136,20 +137,27 @@ export default function Activity() {
   ) => {
     const payableFee = fee - securityDeposit;
     let message = "";
+    let updateFields: any = {
+      input_damageFee: fee,
+    };
+
     if (payableFee > 0) {
       message = "Damage fee is greater than the security deposit.";
+      updateFields.damage_fee = Math.abs(payableFee);
+      updateFields.remaining_deposit = null;
     } else if (payableFee < 0) {
       message = "Damage fee is less than the security deposit.";
+      updateFields.damage_fee = null; // Set damage_fee to null
+      updateFields.remaining_deposit = Math.abs(payableFee);
     } else {
       message = "Damage fee is equal to the security deposit.";
+      updateFields.damage_fee = null; // Set damage_fee to null
+      updateFields.remaining_deposit = null;
     }
 
     const { error } = await supabase
       .from("bookings")
-      .update({
-        damage_fee: Math.abs(payableFee), // Always store as positive
-        input_damageFee: fee,
-      })
+      .update(updateFields)
       .eq("id", bookingId);
 
     if (error) {
@@ -283,7 +291,7 @@ export default function Activity() {
                                       securityDeposit={booking.security_deposit}
                                     />
                                   )}
-                                  {booking.isDamage_paid &&
+                                  {/* {booking.isDamage_paid &&
                                     booking.input_damageFee &&
                                     booking.security_deposit !== undefined &&
                                     !isNaN(
@@ -325,7 +333,7 @@ export default function Activity() {
                                         );
                                       }
                                       return null;
-                                    })()}
+                                    })()} */}
                                 </>
                               )}
 

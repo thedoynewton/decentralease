@@ -47,6 +47,7 @@ export default function Activity() {
           id,
           total_amount,
           status,
+          security_deposit,
           image_proof_url,
           return_date,
           lessee_confirmed,
@@ -56,6 +57,7 @@ export default function Activity() {
           damage_fee,
           isDamage_paid,
           input_damageFee,
+          remaining_deposit,
           listing_id (
             title,
             image_url,
@@ -241,13 +243,27 @@ export default function Activity() {
   const handlePayDamageFee = async (bookingId: string) => {
     const { error } = await supabase
       .from("bookings")
-      .update({ isDamage_paid: true })
+      .update({ isDamage_paid: true, status: "completed" }) // update status here
       .eq("id", bookingId);
 
     if (error) {
       alert("Failed to pay damage fee: " + error.message);
     } else {
-      alert("Damage fee paid!");
+      alert("Damage fee paid! Booking completed.");
+      fetchUserBookings();
+    }
+  };
+
+  const handleReleaseRemainingBalance = async (bookingId: string) => {
+    const { error } = await supabase
+      .from("bookings")
+      .update({ status: "completed" })
+      .eq("id", bookingId);
+
+    if (error) {
+      alert("Failed to release remaining deposit: " + error.message);
+    } else {
+      alert("Remaining deposit released! Booking completed.");
       fetchUserBookings();
     }
   };
@@ -350,9 +366,52 @@ export default function Activity() {
                                 {isAcknowledge && (
                                   <>
                                     {booking.has_damage === true ? (
-                                      booking.damage_fee &&
-                                      !isNaN(parseFloat(booking.damage_fee)) &&
-                                      parseFloat(booking.damage_fee) > 0 ? (
+                                      booking.remaining_deposit !== null ? (
+                                        <div style={{ marginTop: 8 }}>
+                                          <span
+                                            style={{
+                                              color: "#eab308",
+                                              fontWeight: 500,
+                                            }}
+                                          >
+                                            Remaining balance:{" "}
+                                            {parseFloat(
+                                              booking.remaining_deposit
+                                            ).toFixed(10)}{" "}
+                                            ETH
+                                          </span>
+                                          {booking.isDamage_paid ? (
+                                            <span
+                                              style={{
+                                                color: "#43a047",
+                                                fontWeight: 500,
+                                                marginLeft: 12,
+                                              }}
+                                            >
+                                              Damage fee paid successfully!
+                                            </span>
+                                          ) : (
+                                            <button
+                                              className={styles.payButton}
+                                              style={{
+                                                background: "#2563eb",
+                                                marginLeft: 12,
+                                              }}
+                                              onClick={() =>
+                                                handleReleaseRemainingBalance(
+                                                  booking.id
+                                                )
+                                              }
+                                            >
+                                              Release Remaining Deposit
+                                            </button>
+                                          )}
+                                        </div>
+                                      ) : booking.damage_fee &&
+                                        !isNaN(
+                                          parseFloat(booking.damage_fee)
+                                        ) &&
+                                        parseFloat(booking.damage_fee) > 0 ? (
                                         <div style={{ marginTop: 8 }}>
                                           <span
                                             style={{
@@ -361,7 +420,10 @@ export default function Activity() {
                                             }}
                                           >
                                             Damage Fee:{" "}
-                                            {parseFloat(booking.damage_fee)} ETH
+                                            {parseFloat(
+                                              booking.damage_fee
+                                            ).toFixed(10)}{" "}
+                                            ETH
                                           </span>
                                           {booking.isDamage_paid ? (
                                             <span

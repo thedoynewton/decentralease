@@ -74,7 +74,7 @@ export default function InputDamageFee({
       </span>
       <span style={{ marginTop: 4, color: "#2563eb", fontWeight: 500 }}>
         {isValid && difference !== null
-          ? `Calculated payable fee: ${
+          ? `Calculated payable/remaining fee: ${
               difference > 0 ? "+" : ""
             }${difference.toFixed(10)} ETH`
           : "Enter a valid fee to see the difference"}
