@@ -4,7 +4,10 @@ import Layout from "../../../components/LesseeLayout";
 import styles from "../../styles/LesseeActivity.module.css";
 import { useAccount } from "wagmi";
 import { supabase } from "../../../supabase/supabase-client";
-
+import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { parseEther } from "viem";
+import BookingEscrowABI from "../../abi/BookingEscrow.json";
+const ESCROW_ADDRESS = "0xa2fABFAe8ADAA44d5b02584D4579F69feCD51617";
 const STATUS_TABS = ["declined", "pending", "approved", "paid", "completed"];
 
 export default function Activity() {
@@ -14,6 +17,26 @@ export default function Activity() {
   const [activeTab, setActiveTab] = useState("pending");
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [payTxHash, setPayTxHash] = useState<`0x${string}` | undefined>(
+    undefined
+  );
+  const { writeContract, isPending } = useWriteContract();
+  const { isLoading: isPayLoading, isSuccess: isPaySuccess } =
+    useWaitForTransactionReceipt({
+      hash: payTxHash,
+    });
+
+  const [confirmTxHash, setConfirmTxHash] = useState<`0x${string}` | undefined>(
+    undefined
+  );
+  const { writeContract: writeConfirm, isPending: isConfirmPending } =
+    useWriteContract();
+  const { isLoading: isConfirmLoading, isSuccess: isConfirmSuccess } =
+    useWaitForTransactionReceipt({
+      hash: confirmTxHash,
+    });
+
+  const [payingBookingId, setPayingBookingId] = useState<string | null>(null);
 
   const fetchUserBookings = useCallback(async () => {
     if (!address) {
@@ -36,12 +59,16 @@ export default function Activity() {
         return;
       }
 
+      // Updated query to fetch lessor wallet and fee breakdown
       const { data: bookingsData, error: bookingsError } = await supabase
         .from("bookings")
         .select(
           `
           id,
           total_amount,
+          rental_fee,
+          security_deposit,
+          platform_fee,
           status,
           image_proof_url,
           return_date,
@@ -49,7 +76,11 @@ export default function Activity() {
           lessor_confirmed,
           listing_id (
             title,
-            image_url
+            image_url,
+            user_id,
+            users (
+              wallet_address
+            )
           )
         `
         )
@@ -94,43 +125,101 @@ export default function Activity() {
     [fetchUserBookings]
   );
 
-  // Pay Now handler for approved bookings
+  // Pay Now handler for approved bookings (calls contract, then updates status)
   const handlePayNow = useCallback(
-    async (bookingId: string) => {
-      alert("Payment done");
-      // Update status to 'paid'
-      const { error } = await supabase
-        .from("bookings")
-        .update({ status: "paid" })
-        .eq("id", bookingId);
+    async (booking: any) => {
+      try {
+        const lessorWallet = booking.listing_id?.users?.wallet_address;
+        if (!lessorWallet) {
+          alert("Lessor wallet address not found.");
+          return;
+        }
+        const rentalFee = booking.rental_fee || "0";
+        const securityDeposit = booking.security_deposit || "0";
+        const platformFee = booking.platform_fee || "0";
+        const total = (
+          Number(rentalFee) +
+          Number(securityDeposit) +
+          Number(platformFee)
+        ).toString();
 
-      if (error) {
-        alert(`Failed to update payment status: ${error.message}`);
-      } else {
-        fetchUserBookings();
+        setPayingBookingId(booking.id);
+        await writeContract({
+          address: ESCROW_ADDRESS,
+          abi: BookingEscrowABI.abi,
+          functionName: "payBooking",
+          args: [
+            lessorWallet,
+            parseEther(rentalFee),
+            parseEther(securityDeposit),
+            parseEther(platformFee),
+          ],
+          value: parseEther(total),
+        });
+        // wagmi will emit events and update isPaySuccess
+      } catch (err: any) {
+        alert("Smart contract payment failed: " + (err?.message || err));
+        setPayingBookingId(null);
       }
     },
-    [fetchUserBookings]
+    [writeContract]
   );
 
-  const handleConfirmReturn = async (bookingId: string) => {
-    if (window.confirm("Confirm that you have returned the item?")) {
-      const { error } = await supabase
-        .from("bookings")
-        .update({ lessee_confirmed: true })
-        .eq("id", bookingId);
-
-      if (error) {
-        alert("Failed to confirm return: " + error.message);
-      } else {
-        alert("Return confirmed!");
+  useEffect(() => {
+    const updateStatus = async () => {
+      if (isPaySuccess && payingBookingId) {
+        await supabase
+          .from("bookings")
+          .update({ status: "paid" })
+          .eq("id", payingBookingId);
         fetchUserBookings();
+        setPayTxHash(undefined);
+        setPayingBookingId(null);
       }
-    }
-  };
+    };
+    updateStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPaySuccess, payingBookingId]);
+
+  // Confirm Return handler (calls contract, then updates status)
+  const handleConfirmReturn = useCallback(
+    async (booking: any) => {
+      try {
+        const tx = await writeConfirm({
+          address: ESCROW_ADDRESS,
+          abi: BookingEscrowABI.abi,
+          functionName: "confirmReturnByLessee",
+          args: [booking.id],
+        });
+        // As above, you may need to set the hash if available
+      } catch (err: any) {
+        alert("Smart contract confirm failed: " + (err?.message || err));
+      }
+    },
+    [writeConfirm]
+  );
+
+  useEffect(() => {
+    const updateStatus = async () => {
+      if (isConfirmSuccess) {
+        // Find the booking that is still paid
+        const booking = bookings.find((b: any) => b.status === "paid");
+        if (booking) {
+          await supabase
+            .from("bookings")
+            .update({ lessee_confirmed: true })
+            .eq("id", booking.id);
+        }
+        fetchUserBookings();
+        setConfirmTxHash(undefined);
+      }
+    };
+    updateStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConfirmSuccess]);
 
   const filteredBookings = bookings.filter(
-    (b) => b.status.toLowerCase() === activeTab.toLowerCase()
+    (b: any) => b.status && b.status.toLowerCase() === activeTab.toLowerCase()
   );
 
   // Handler to trigger file input
@@ -247,117 +336,123 @@ export default function Activity() {
                   )}
                   {activeTab === "approved" && (
                     <button
-                      onClick={() => handlePayNow(booking.id)}
+                      onClick={() => handlePayNow(booking)}
                       className={styles.payButton}
-                      disabled={loading}
+                      disabled={isPending || isPayLoading}
                     >
-                      Pay Now
+                      {isPending || isPayLoading ? "Paying..." : "Pay Now"}
                     </button>
                   )}
                   {activeTab === "paid" && (
                     <>
-                      {booking.image_proof_url ? (
-                        (() => {
-                          // Check if today is the return date or later
-                          const today = new Date();
-                          const returnDate = booking.return_date
-                            ? new Date(booking.return_date)
-                            : null;
-                          const lesseeConfirmed = booking.lessee_confirmed;
-                          const lessorConfirmed = booking.lessor_confirmed;
-                          const totalConfirmed =
-                            (lesseeConfirmed ? 1 : 0) +
-                            (lessorConfirmed ? 1 : 0);
-
+                      {(() => {
+                        const today = new Date();
+                        const returnDate = booking.return_date
+                          ? new Date(booking.return_date)
+                          : null;
+                        const lesseeConfirmed = booking.lessee_confirmed;
+                        const lessorConfirmed = booking.lessor_confirmed;
+                        const totalConfirmed =
+                          (lesseeConfirmed ? 1 : 0) + (lessorConfirmed ? 1 : 0);
+                        // If status is paid and no image proof, show upload button
+                        if (
+                          booking.status === "paid" &&
+                          !booking.image_proof_url
+                        ) {
+                          return (
+                            <>
+                              <button
+                                className={styles.payButton}
+                                style={{ background: "#43a047" }}
+                                onClick={() => handleUploadProof(booking.id)}
+                                disabled={uploadingId === booking.id}
+                              >
+                                {uploadingId === booking.id
+                                  ? "Uploading..."
+                                  : "Upload Proof of Handover"}
+                              </button>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                style={{ display: "none" }}
+                                ref={(el) => {
+                                  fileInputRefs.current[booking.id] = el;
+                                }}
+                                onChange={(e) =>
+                                  handleFileChange(e, booking.id)
+                                }
+                                disabled={uploadingId === booking.id}
+                              />
+                            </>
+                          );
+                        }
+                        // If status is paid, image proof exists, and today < return date, show 'In use'
+                        if (
+                          booking.status === "paid" &&
+                          booking.image_proof_url &&
+                          returnDate &&
+                          today < returnDate
+                        ) {
+                          return (
+                            <span style={{ color: "#43a047", fontWeight: 500 }}>
+                              In use
+                            </span>
+                          );
+                        }
+                        // If status is paid, image proof exists, and today >= return date, show confirm/confirmation UI
+                        if (
+                          booking.status === "paid" &&
+                          booking.image_proof_url &&
+                          returnDate &&
+                          today >= returnDate
+                        ) {
                           // If both confirmed and status is still "paid", update to "completed"
-                          if (
-                            returnDate &&
-                            today >= returnDate &&
-                            lesseeConfirmed &&
-                            lessorConfirmed &&
-                            booking.status === "paid"
-                          ) {
-                            // Fire-and-forget status update (no await in render)
+                          if (lesseeConfirmed && lessorConfirmed) {
                             supabase
                               .from("bookings")
                               .update({ status: "completed" })
                               .eq("id", booking.id)
                               .then(() => fetchUserBookings());
                           }
-
-                          if (returnDate && today >= returnDate) {
-                            return (
-                              <div>
-                                <div
-                                  style={{ marginBottom: 8, fontWeight: 500 }}
-                                >
-                                  Confirmation: {totalConfirmed}/2
-                                </div>
-                                {!lesseeConfirmed && (
-                                  <button
-                                    className={styles.payButton}
-                                    style={{ background: "#2563eb" }}
-                                    onClick={() =>
-                                      handleConfirmReturn(booking.id)
-                                    }
-                                    disabled={uploadingId === booking.id}
-                                  >
-                                    Confirm Return
-                                  </button>
-                                )}
-                                {lesseeConfirmed && totalConfirmed < 2 && (
-                                  <span
-                                    style={{
-                                      color: "#43a047",
-                                      fontWeight: 500,
-                                    }}
-                                  >
-                                    Waiting for lessor confirmation...
-                                  </span>
-                                )}
-                                {totalConfirmed === 2 && (
-                                  <span
-                                    style={{
-                                      color: "#43a047",
-                                      fontWeight: 500,
-                                    }}
-                                  >
-                                    Both parties confirmed. Booking completed!
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          }
                           return (
-                            <span style={{ color: "#43a047", fontWeight: 500 }}>
-                              In use
-                            </span>
+                            <div>
+                              <div style={{ marginBottom: 8, fontWeight: 500 }}>
+                                Confirmation: {totalConfirmed}/2
+                              </div>
+                              {!lesseeConfirmed && (
+                                <button
+                                  className={styles.payButton}
+                                  style={{ background: "#2563eb" }}
+                                  onClick={() => handleConfirmReturn(booking)}
+                                  disabled={
+                                    isConfirmPending || isConfirmLoading
+                                  }
+                                >
+                                  {isConfirmPending || isConfirmLoading
+                                    ? "Confirming..."
+                                    : "Confirm Return"}
+                                </button>
+                              )}
+                              {lesseeConfirmed && totalConfirmed < 2 && (
+                                <span
+                                  style={{ color: "#43a047", fontWeight: 500 }}
+                                >
+                                  Waiting for lessor confirmation...
+                                </span>
+                              )}
+                              {totalConfirmed === 2 && (
+                                <span
+                                  style={{ color: "#43a047", fontWeight: 500 }}
+                                >
+                                  Both parties confirmed. Booking completed!
+                                </span>
+                              )}
+                            </div>
                           );
-                        })()
-                      ) : (
-                        <>
-                          <button
-                            className={styles.payButton}
-                            style={{ background: "#43a047" }}
-                            onClick={() => handleUploadProof(booking.id)}
-                            disabled={uploadingId === booking.id}
-                          >
-                            {uploadingId === booking.id
-                              ? "Uploading..."
-                              : "Upload Proof of Handover"}
-                          </button>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            style={{ display: "none" }}
-                            ref={(el) => {
-                              fileInputRefs.current[booking.id] = el;
-                            }}
-                            onChange={(e) => handleFileChange(e, booking.id)}
-                            disabled={uploadingId === booking.id}
-                          />
-                        </>
-                      )}
+                        }
+                        // Fallback
+                        return null;
+                      })()}
                     </>
                   )}
                 </li>

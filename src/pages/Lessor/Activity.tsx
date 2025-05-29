@@ -1,10 +1,16 @@
 // Activity.tsx
 import { useCallback, useEffect, useState } from "react";
 import styles from "../../styles/LesseeActivity.module.css";
-import { useAccount } from "wagmi";
+import {
+  useAccount,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+} from "wagmi";
 import { supabase } from "../../../supabase/supabase-client";
 import Layout from "../../../components/LessorLayout";
+import BookingEscrowABI from "../../abi/BookingEscrow.json";
 
+const ESCROW_ADDRESS = "0xa2fABFAe8ADAA44d5b02584D4579F69feCD51617";
 const STATUS_TABS = ["approved", "paid", "completed"];
 
 export default function Activity() {
@@ -12,6 +18,18 @@ export default function Activity() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("approved");
+  const [confirmTxHash, setConfirmTxHash] = useState<`0x${string}` | undefined>(
+    undefined
+  );
+  const { writeContract: writeConfirm, isPending: isConfirmPending } =
+    useWriteContract();
+  const { isLoading: isConfirmLoading, isSuccess: isConfirmSuccess } =
+    useWaitForTransactionReceipt({
+      hash: confirmTxHash,
+    });
+  const [confirmingBookingId, setConfirmingBookingId] = useState<string | null>(
+    null
+  );
 
   const fetchUserBookings = useCallback(async () => {
     if (!address) {
@@ -77,25 +95,46 @@ export default function Activity() {
     fetchUserBookings();
   }, [fetchUserBookings]);
 
+  const handleConfirmReturn = useCallback(
+    async (bookingId: string) => {
+      if (window.confirm("Confirm that you have returned the item?")) {
+        setConfirmingBookingId(bookingId);
+        try {
+          await writeConfirm({
+            address: ESCROW_ADDRESS,
+            abi: BookingEscrowABI.abi,
+            functionName: "confirmReturnByLessor",
+            args: [bookingId],
+          });
+          // wagmi will emit events and update isConfirmSuccess
+        } catch (err: any) {
+          alert("Smart contract confirm failed: " + (err?.message || err));
+          setConfirmingBookingId(null);
+        }
+      }
+    },
+    [writeConfirm]
+  );
+
+  useEffect(() => {
+    const updateStatus = async () => {
+      if (isConfirmSuccess && confirmingBookingId) {
+        await supabase
+          .from("bookings")
+          .update({ lessor_confirmed: true })
+          .eq("id", confirmingBookingId);
+        fetchUserBookings();
+        setConfirmTxHash(undefined);
+        setConfirmingBookingId(null);
+      }
+    };
+    updateStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConfirmSuccess, confirmingBookingId]);
+
   const filteredBookings = bookings.filter(
     (b) => b.status.toLowerCase() === activeTab.toLowerCase()
   );
-
-  const handleConfirmReturn = async (bookingId: string) => {
-    if (window.confirm("Confirm that you have returned the item?")) {
-      const { error } = await supabase
-        .from("bookings")
-        .update({ lessor_confirmed: true })
-        .eq("id", bookingId);
-
-      if (error) {
-        alert("Failed to confirm return: " + error.message);
-      } else {
-        alert("Return confirmed!");
-        fetchUserBookings();
-      }
-    }
-  };
 
   return (
     <Layout>
@@ -141,10 +180,14 @@ export default function Activity() {
                     <div>Total Amount: {booking.total_amount} ETH</div>
                   </div>
                   {/* Upload Proof of Handover button and input removed */}
+                  {activeTab === "paid" && !booking.image_proof_url && (
+                    <span style={{ color: "#f59e42", fontWeight: 500 }}>
+                      Waiting for lessee to upload proof of handover...
+                    </span>
+                  )}
                   {activeTab === "paid" &&
                     booking.image_proof_url &&
                     (() => {
-                      // Check if today is the return date or later
                       const today = new Date();
                       const returnDate = booking.return_date
                         ? new Date(booking.return_date)
@@ -153,7 +196,6 @@ export default function Activity() {
                       const lessorConfirmed = booking.lessor_confirmed;
                       const totalConfirmed =
                         (lesseeConfirmed ? 1 : 0) + (lessorConfirmed ? 1 : 0);
-
                       // If both confirmed and status is still "paid", update to "completed"
                       if (
                         returnDate &&
@@ -162,14 +204,12 @@ export default function Activity() {
                         lessorConfirmed &&
                         booking.status === "paid"
                       ) {
-                        // Fire-and-forget status update (no await in render)
                         supabase
                           .from("bookings")
                           .update({ status: "completed" })
                           .eq("id", booking.id)
                           .then(() => fetchUserBookings());
                       }
-
                       if (returnDate && today >= returnDate) {
                         return (
                           <div>
@@ -181,8 +221,11 @@ export default function Activity() {
                                 className={styles.payButton}
                                 style={{ background: "#2563eb" }}
                                 onClick={() => handleConfirmReturn(booking.id)}
+                                disabled={isConfirmPending || isConfirmLoading}
                               >
-                                Confirm Return
+                                {isConfirmPending || isConfirmLoading
+                                  ? "Confirming..."
+                                  : "Confirm Return"}
                               </button>
                             )}
                             {lessorConfirmed && totalConfirmed < 2 && (
@@ -202,6 +245,7 @@ export default function Activity() {
                           </div>
                         );
                       }
+                      // If not yet return date
                       return (
                         <span style={{ color: "#43a047", fontWeight: 500 }}>
                           In use
