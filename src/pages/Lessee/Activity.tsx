@@ -160,6 +160,30 @@ export default function Activity() {
       .update({ lessee_confirmed: true, is_acknowledge: true })
       .eq("id", modalBooking.id);
 
+    if (!error) {
+      // Fetch the latest booking to check all conditions
+      const { data: updatedBooking } = await supabase
+        .from("bookings")
+        .select(
+          "lessee_confirmed, lessor_confirmed, has_damage, is_acknowledge"
+        )
+        .eq("id", modalBooking.id)
+        .single();
+
+      if (
+        updatedBooking &&
+        updatedBooking.lessee_confirmed &&
+        updatedBooking.lessor_confirmed &&
+        updatedBooking.has_damage !== null &&
+        updatedBooking.is_acknowledge
+      ) {
+        await supabase
+          .from("bookings")
+          .update({ status: "completed" })
+          .eq("id", modalBooking.id);
+      }
+    }
+
     setModalLoading(false);
     setModalBooking(null);
 
@@ -300,32 +324,16 @@ export default function Activity() {
                     <>
                       {booking.image_proof_url ? (
                         (() => {
-                          // Check if today is the return date or later
                           const today = new Date();
                           const returnDate = booking.return_date
                             ? new Date(booking.return_date)
                             : null;
                           const lesseeConfirmed = booking.lessee_confirmed;
                           const lessorConfirmed = booking.lessor_confirmed;
+                          const isAcknowledge = booking.is_acknowledge;
                           const totalConfirmed =
                             (lesseeConfirmed ? 1 : 0) +
                             (lessorConfirmed ? 1 : 0);
-
-                          // If both confirmed and status is still "paid", update to "completed"
-                          if (
-                            returnDate &&
-                            today >= returnDate &&
-                            lesseeConfirmed &&
-                            lessorConfirmed &&
-                            booking.status === "paid"
-                          ) {
-                            // Fire-and-forget status update (no await in render)
-                            supabase
-                              .from("bookings")
-                              .update({ status: "completed" })
-                              .eq("id", booking.id)
-                              .then(() => fetchUserBookings());
-                          }
 
                           if (returnDate && today >= returnDate) {
                             return (
@@ -335,7 +343,8 @@ export default function Activity() {
                                 >
                                   Confirmation: {totalConfirmed}/2
                                 </div>
-                                {!lesseeConfirmed && (
+                                {/* Always show Confirm Return if not acknowledged */}
+                                {!isAcknowledge && (
                                   <button
                                     className={styles.payButton}
                                     style={{ background: "#2563eb" }}
@@ -345,14 +354,14 @@ export default function Activity() {
                                     Confirm Return
                                   </button>
                                 )}
-                                {lesseeConfirmed && totalConfirmed < 2 && (
+                                {isAcknowledge && (
                                   <span
                                     style={{
                                       color: "#43a047",
                                       fontWeight: 500,
                                     }}
                                   >
-                                    Waiting for lessor confirmation...
+                                    Waiting for lessor acknowledgement...
                                   </span>
                                 )}
                                 {totalConfirmed === 2 && (

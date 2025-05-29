@@ -28,22 +28,11 @@ export default function ConfirmReturnModal({
     <div className={styles.overlay}>
       <div className={styles.modal}>
         <h2 className={styles.title}>Proof of Handover</h2>
-        <img
-          src={imageUrl}
-          alt="Proof"
-          className={styles.image}
-        />
+        <img src={imageUrl} alt="Proof" className={styles.image} />
         <div className={styles.question}>Does the item have any damage?</div>
         {/* Button logic */}
         {confirmationCount === 0 && (
           <div className={styles.buttonGroup}>
-            <button
-              className={styles.yesButton}
-              disabled={loading}
-              onClick={() => onAction(true)}
-            >
-              Yes, has damage
-            </button>
             <button
               className={styles.noButton}
               disabled={loading}
@@ -51,42 +40,48 @@ export default function ConfirmReturnModal({
             >
               No damage
             </button>
+            <button
+              className={styles.yesButton}
+              disabled={loading}
+              onClick={() => onAction(true)}
+            >
+              Yes, has damage
+            </button>
           </div>
         )}
-        {confirmationCount === 1 && hasDamage === true && (
+        {confirmationCount === 1 && !isAcknowledge && (
           <div className={styles.buttonGroup}>
-            <span className={styles.selectedText}>Selected: Yes, has damage</span>
-            {!isAcknowledge ? (
-              <button
-                className={styles.acknowledgeButton}
-                disabled={loading}
-                onClick={onAcknowledge}
-              >
-                Acknowledge
-              </button>
-            ) : (
-              <button className={styles.acknowledgeButton} disabled>
-                Acknowledged
-              </button>
-            )}
+            <button
+              className={`${styles.noButton} ${
+                hasDamage === false ? styles.selected : ""
+              }`}
+              disabled={loading}
+              onClick={() => onAction(false)}
+            >
+              No damage
+            </button>
+            <button
+              className={`${styles.yesButton} ${
+                hasDamage === true ? styles.selected : ""
+              }`}
+              disabled={loading}
+              onClick={() => onAction(true)}
+            >
+              Yes, has damage
+            </button>
+            <span className={styles.infoText}>
+              You can change your selection until the other party acknowledges.
+            </span>
           </div>
         )}
-        {confirmationCount === 1 && hasDamage === false && (
+        {confirmationCount === 1 && isAcknowledge && (
           <div className={styles.buttonGroup}>
-            <span className={styles.selectedText}>Selected: No damage</span>
-            {!isAcknowledge ? (
-              <button
-                className={styles.acknowledgeButton}
-                disabled={loading}
-                onClick={onAcknowledge}
-              >
-                Acknowledge
-              </button>
-            ) : (
-              <button className={styles.acknowledgeButton} disabled>
-                Acknowledged
-              </button>
-            )}
+            <span className={styles.selectedText}>
+              Selected: {hasDamage ? "Yes, has damage" : "No damage"}
+            </span>
+            <button className={styles.acknowledgeButton} disabled>
+              Acknowledged
+            </button>
           </div>
         )}
         <div>

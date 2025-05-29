@@ -5,6 +5,7 @@ import { useAccount } from "wagmi";
 import { supabase } from "../../../supabase/supabase-client";
 import Layout from "../../../components/LessorLayout";
 import ConfirmReturnModal from "../../../components/ConfirmReturnModal";
+import AcknowledgeModal from "../../../components/AcknowledgeModal";
 
 const STATUS_TABS = ["approved", "paid", "completed"];
 
@@ -16,6 +17,9 @@ export default function Activity() {
 
   const [modalBooking, setModalBooking] = useState<any | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
+
+  const [ackModalBooking, setAckModalBooking] = useState<any | null>(null);
+  const [ackLoading, setAckLoading] = useState(false);
 
   const fetchUserBookings = useCallback(async () => {
     if (!address) {
@@ -119,17 +123,42 @@ export default function Activity() {
     }
   };
 
-  // Example for Lessor Activity.tsx
   const handleAcknowledge = async () => {
-    if (!modalBooking) return;
-    setModalLoading(true);
+    if (!ackModalBooking) return;
+    setAckLoading(true);
+
+    // Update lessor_confirmed and is_acknowledge
     const { error } = await supabase
       .from("bookings")
       .update({ lessor_confirmed: true, is_acknowledge: true })
-      .eq("id", modalBooking.id);
+      .eq("id", ackModalBooking.id);
 
-    setModalLoading(false);
-    setModalBooking(null);
+    if (!error) {
+      // Optionally, check if all conditions are met to set status to completed
+      const { data: updatedBooking } = await supabase
+        .from("bookings")
+        .select(
+          "lessee_confirmed, lessor_confirmed, has_damage, is_acknowledge"
+        )
+        .eq("id", ackModalBooking.id)
+        .single();
+
+      if (
+        updatedBooking &&
+        updatedBooking.lessee_confirmed &&
+        updatedBooking.lessor_confirmed &&
+        updatedBooking.has_damage !== null &&
+        updatedBooking.is_acknowledge
+      ) {
+        await supabase
+          .from("bookings")
+          .update({ status: "completed" })
+          .eq("id", ackModalBooking.id);
+      }
+    }
+
+    setAckLoading(false);
+    setAckModalBooking(null);
 
     if (error) {
       alert("Failed to acknowledge: " + error.message);
@@ -182,11 +211,10 @@ export default function Activity() {
                     <strong>{booking.listing_id?.title}</strong>
                     <div>Total Amount: {booking.total_amount} ETH</div>
                   </div>
-                  {/* Upload Proof of Handover button and input removed */}
+
                   {activeTab === "paid" &&
                     booking.image_proof_url &&
                     (() => {
-                      // Check if today is the return date or later
                       const today = new Date();
                       const returnDate = booking.return_date
                         ? new Date(booking.return_date)
@@ -196,43 +224,33 @@ export default function Activity() {
                       const totalConfirmed =
                         (lesseeConfirmed ? 1 : 0) + (lessorConfirmed ? 1 : 0);
 
-                      // If both confirmed and status is still "paid", update to "completed"
-                      if (
-                        returnDate &&
-                        today >= returnDate &&
-                        lesseeConfirmed &&
-                        lessorConfirmed &&
-                        booking.status === "paid"
-                      ) {
-                        // Fire-and-forget status update (no await in render)
-                        supabase
-                          .from("bookings")
-                          .update({ status: "completed" })
-                          .eq("id", booking.id)
-                          .then(() => fetchUserBookings());
-                      }
-
                       if (returnDate && today >= returnDate) {
                         return (
                           <div>
                             <div style={{ marginBottom: 8, fontWeight: 500 }}>
                               Confirmation: {totalConfirmed}/2
                             </div>
-                            {!lessorConfirmed && (
+                            {/* Show Acknowledge button if has_damage is set and not acknowledged */}
+                            {booking.has_damage !== null &&
+                            !booking.is_acknowledge ? (
                               <button
                                 className={styles.payButton}
                                 style={{ background: "#2563eb" }}
-                                onClick={() => handleConfirmReturn(booking)}
+                                onClick={() => setAckModalBooking(booking)}
+                                disabled={ackLoading}
                               >
-                                Confirm Return
+                                Acknowledge
                               </button>
-                            )}
-                            {lessorConfirmed && totalConfirmed < 2 && (
-                              <span
-                                style={{ color: "#43a047", fontWeight: 500 }}
-                              >
-                                Waiting for lessee confirmation...
-                              </span>
+                            ) : (
+                              // Show waiting span if lessor has confirmed but not both parties yet
+                              !lesseeConfirmed &&
+                              totalConfirmed < 2 && (
+                                <span
+                                  style={{ color: "#43a047", fontWeight: 500 }}
+                                >
+                                  Waiting for lessee confirmation...
+                                </span>
+                              )
                             )}
                             {totalConfirmed === 2 && (
                               <span
@@ -256,26 +274,12 @@ export default function Activity() {
           )}
         </div>
       </div>
-      {/* Modal for confirm return */}
-      <ConfirmReturnModal
-        open={!!modalBooking}
-        imageUrl={modalBooking?.image_proof_url || ""}
-        loading={modalLoading}
-        hasDamage={
-          modalBooking?.has_damage === undefined ||
-          modalBooking?.has_damage === null
-            ? null
-            : modalBooking?.has_damage === true ||
-              modalBooking?.has_damage === 1 ||
-              modalBooking?.has_damage === "true"
-            ? true
-            : false
-        }
-        confirmationCount={modalBooking?.confirmationCount ?? 0}
-        isAcknowledge={modalBooking?.is_acknowledge ?? false}
-        onClose={() => setModalBooking(null)}
-        onAction={handleModalAction}
-        onAcknowledge={handleAcknowledge}
+      <AcknowledgeModal
+        open={!!ackModalBooking}
+        hasDamage={ackModalBooking?.has_damage ?? null}
+        loading={ackLoading}
+        onConfirm={handleAcknowledge}
+        onCancel={() => setAckModalBooking(null)}
       />
     </Layout>
   );
