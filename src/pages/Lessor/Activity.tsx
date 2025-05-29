@@ -4,6 +4,7 @@ import styles from "../../styles/LesseeActivity.module.css";
 import { useAccount } from "wagmi";
 import { supabase } from "../../../supabase/supabase-client";
 import Layout from "../../../components/LessorLayout";
+import ConfirmReturnModal from "../../../components/ConfirmReturnModal";
 
 const STATUS_TABS = ["approved", "paid", "completed"];
 
@@ -12,6 +13,9 @@ export default function Activity() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("approved");
+
+  const [modalBooking, setModalBooking] = useState<any | null>(null);
+  const [modalLoading, setModalLoading] = useState(false);
 
   const fetchUserBookings = useCallback(async () => {
     if (!address) {
@@ -47,6 +51,8 @@ export default function Activity() {
         return_date,
         lessee_confirmed,
         lessor_confirmed,
+        has_damage,
+        is_acknowledge,
         listing_id (
           title,
           image_url,
@@ -81,19 +87,55 @@ export default function Activity() {
     (b) => b.status.toLowerCase() === activeTab.toLowerCase()
   );
 
-  const handleConfirmReturn = async (bookingId: string) => {
-    if (window.confirm("Confirm that you have returned the item?")) {
-      const { error } = await supabase
-        .from("bookings")
-        .update({ lessor_confirmed: true })
-        .eq("id", bookingId);
+  // When opening the modal, pass confirmation count and has_damage
+  const handleConfirmReturn = (booking: any) => {
+    const confirmationCount =
+      (booking.lessee_confirmed ? 1 : 0) + (booking.lessor_confirmed ? 1 : 0);
+    setModalBooking({ ...booking, confirmationCount });
+  };
 
-      if (error) {
-        alert("Failed to confirm return: " + error.message);
-      } else {
-        alert("Return confirmed!");
-        fetchUserBookings();
-      }
+  // Handle modal actions
+  const handleModalAction = async (hasDamage: boolean) => {
+    if (!modalBooking) return;
+    setModalLoading(true);
+    // Update both lessor_confirmed and has_damage fields
+    const { error } = await supabase
+      .from("bookings")
+      .update({ lessor_confirmed: true, has_damage: hasDamage })
+      .eq("id", modalBooking.id);
+
+    setModalLoading(false);
+    setModalBooking(null);
+
+    if (error) {
+      alert("Failed to confirm return: " + error.message);
+    } else {
+      alert(
+        hasDamage
+          ? "Marked as returned with damage."
+          : "Return confirmed with no damage."
+      );
+      fetchUserBookings();
+    }
+  };
+
+  // Example for Lessor Activity.tsx
+  const handleAcknowledge = async () => {
+    if (!modalBooking) return;
+    setModalLoading(true);
+    const { error } = await supabase
+      .from("bookings")
+      .update({ lessor_confirmed: true, is_acknowledge: true })
+      .eq("id", modalBooking.id);
+
+    setModalLoading(false);
+    setModalBooking(null);
+
+    if (error) {
+      alert("Failed to acknowledge: " + error.message);
+    } else {
+      alert("Acknowledged successfully.");
+      fetchUserBookings();
     }
   };
 
@@ -180,7 +222,7 @@ export default function Activity() {
                               <button
                                 className={styles.payButton}
                                 style={{ background: "#2563eb" }}
-                                onClick={() => handleConfirmReturn(booking.id)}
+                                onClick={() => handleConfirmReturn(booking)}
                               >
                                 Confirm Return
                               </button>
@@ -214,6 +256,27 @@ export default function Activity() {
           )}
         </div>
       </div>
+      {/* Modal for confirm return */}
+      <ConfirmReturnModal
+        open={!!modalBooking}
+        imageUrl={modalBooking?.image_proof_url || ""}
+        loading={modalLoading}
+        hasDamage={
+          modalBooking?.has_damage === undefined ||
+          modalBooking?.has_damage === null
+            ? null
+            : modalBooking?.has_damage === true ||
+              modalBooking?.has_damage === 1 ||
+              modalBooking?.has_damage === "true"
+            ? true
+            : false
+        }
+        confirmationCount={modalBooking?.confirmationCount ?? 0}
+        isAcknowledge={modalBooking?.is_acknowledge ?? false}
+        onClose={() => setModalBooking(null)}
+        onAction={handleModalAction}
+        onAcknowledge={handleAcknowledge}
+      />
     </Layout>
   );
 }
