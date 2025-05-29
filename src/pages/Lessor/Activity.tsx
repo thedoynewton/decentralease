@@ -8,6 +8,7 @@ import AcknowledgeModal from "../../../components/AcknowledgeModal";
 import ReleasePaymentButton from "../../../components/ReleasePaymentButton";
 import InputDamageFee from "../../../components/InputDamageFee";
 import CollectFundButton from "../../../components/CollectFundButton";
+import CollectAllFundsButton from "../../../components/CollectAllFundsButton";
 
 const STATUS_TABS = ["approved", "paid", "completed"];
 
@@ -16,9 +17,6 @@ export default function Activity() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("approved");
-
-  const [modalBooking, setModalBooking] = useState<any | null>(null);
-  const [modalLoading, setModalLoading] = useState(false);
 
   const [ackModalBooking, setAckModalBooking] = useState<any | null>(null);
   const [ackLoading, setAckLoading] = useState(false);
@@ -52,6 +50,7 @@ export default function Activity() {
           `
         id,
         total_amount,
+        security_deposit,
         status,
         image_proof_url,
         return_date,
@@ -60,6 +59,7 @@ export default function Activity() {
         has_damage,
         is_acknowledge,
         isDamage_paid,
+        input_damageFee,
         listing_id (
           title,
           image_url,
@@ -129,17 +129,33 @@ export default function Activity() {
     }
   };
 
-  // Add this function:
-  const handleSubmitDamageFee = async (bookingId: string, fee: number) => {
+  const handleSubmitDamageFee = async (
+    bookingId: string,
+    fee: number,
+    securityDeposit: number
+  ) => {
+    const payableFee = fee - securityDeposit;
+    let message = "";
+    if (payableFee > 0) {
+      message = "Damage fee is greater than the security deposit.";
+    } else if (payableFee < 0) {
+      message = "Damage fee is less than the security deposit.";
+    } else {
+      message = "Damage fee is equal to the security deposit.";
+    }
+
     const { error } = await supabase
       .from("bookings")
-      .update({ damage_fee: fee })
+      .update({
+        damage_fee: Math.abs(payableFee), // Always store as positive
+        input_damageFee: fee,
+      })
       .eq("id", bookingId);
 
     if (error) {
       alert("Failed to submit damage fee: " + error.message);
     } else {
-      alert(`Damage fee submitted: ${fee}`);
+      alert(`${message} (Submitted: ${Math.abs(payableFee)})`);
       fetchUserBookings();
     }
   };
@@ -154,6 +170,20 @@ export default function Activity() {
       alert("Failed to collect fund: " + error.message);
     } else {
       alert("Funds collected! Booking completed.");
+      fetchUserBookings();
+    }
+  };
+
+  const handleCollectAllFunds = async (bookingId: string) => {
+    const { error } = await supabase
+      .from("bookings")
+      .update({ status: "completed" })
+      .eq("id", bookingId);
+
+    if (error) {
+      alert("Failed to collect all funds: " + error.message);
+    } else {
+      alert("All funds collected! Booking completed.");
       fetchUserBookings();
     }
   };
@@ -239,31 +269,63 @@ export default function Activity() {
                               hasDamage === true &&
                               isAcknowledge && (
                                 <>
-                                  {booking.isDamage_paid ? (
-                                    <CollectFundButton
-                                      onClick={() =>
-                                        handleCollectFund(booking.id)
+                                  {/* Add InputDamageFee here if damage fee is not yet paid */}
+                                  {!booking.isDamage_paid && (
+                                    <InputDamageFee
+                                      onSubmit={(fee) =>
+                                        handleSubmitDamageFee(
+                                          booking.id,
+                                          fee,
+                                          booking.security_deposit
+                                        )
                                       }
+                                      disabled={!!booking.isDamage_paid}
+                                      securityDeposit={booking.security_deposit}
                                     />
-                                  ) : (
-                                    <>
-                                      <InputDamageFee
-                                        onSubmit={(fee) =>
-                                          handleSubmitDamageFee(booking.id, fee)
-                                        }
-                                      />
-                                      <span
-                                        style={{
-                                          display: "block",
-                                          marginTop: 8,
-                                          color: "#eab308",
-                                          fontWeight: 500,
-                                        }}
-                                      >
-                                        Input the amount of damage fee
-                                      </span>
-                                    </>
                                   )}
+                                  {booking.isDamage_paid &&
+                                    booking.input_damageFee &&
+                                    booking.security_deposit !== undefined &&
+                                    !isNaN(
+                                      parseFloat(booking.input_damageFee)
+                                    ) &&
+                                    !isNaN(
+                                      parseFloat(booking.security_deposit)
+                                    ) &&
+                                    (() => {
+                                      const inputFee = parseFloat(
+                                        booking.input_damageFee
+                                      );
+                                      const deposit = parseFloat(
+                                        booking.security_deposit
+                                      );
+
+                                      if (deposit < inputFee) {
+                                        return (
+                                          <div style={{ marginTop: 16 }}>
+                                            <CollectAllFundsButton
+                                              onClick={() =>
+                                                handleCollectAllFunds(
+                                                  booking.id
+                                                )
+                                              }
+                                            />
+                                          </div>
+                                        );
+                                      }
+                                      if (deposit > inputFee) {
+                                        return (
+                                          <div style={{ marginTop: 16 }}>
+                                            <CollectFundButton
+                                              onClick={() =>
+                                                handleCollectFund(booking.id)
+                                              }
+                                            />
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    })()}
                                 </>
                               )}
 

@@ -55,6 +55,7 @@ export default function Activity() {
           is_acknowledge,
           damage_fee,
           isDamage_paid,
+          input_damageFee,
           listing_id (
             title,
             image_url,
@@ -348,54 +349,66 @@ export default function Activity() {
                                 )}
                                 {isAcknowledge && (
                                   <>
-                                    {booking.damage_fee &&
-                                    !isNaN(parseFloat(booking.damage_fee)) &&
-                                    parseFloat(booking.damage_fee) > 0 ? (
-                                      <div style={{ marginTop: 8 }}>
+                                    {booking.has_damage === true ? (
+                                      booking.damage_fee &&
+                                      !isNaN(parseFloat(booking.damage_fee)) &&
+                                      parseFloat(booking.damage_fee) > 0 ? (
+                                        <div style={{ marginTop: 8 }}>
+                                          <span
+                                            style={{
+                                              color: "#eab308",
+                                              fontWeight: 500,
+                                            }}
+                                          >
+                                            Damage Fee:{" "}
+                                            {parseFloat(booking.damage_fee)} ETH
+                                          </span>
+                                          {booking.isDamage_paid ? (
+                                            <span
+                                              style={{
+                                                color: "#43a047",
+                                                fontWeight: 500,
+                                                marginLeft: 12,
+                                              }}
+                                            >
+                                              Damage fee paid successfully!
+                                            </span>
+                                          ) : (
+                                            <button
+                                              className={styles.payButton}
+                                              style={{
+                                                background: "#eab308",
+                                                marginLeft: 12,
+                                              }}
+                                              onClick={() =>
+                                                handlePayDamageFee(booking.id)
+                                              }
+                                            >
+                                              Pay Damage Fee
+                                            </button>
+                                          )}
+                                        </div>
+                                      ) : (
                                         <span
                                           style={{
-                                            color: "#eab308",
+                                            color: "#64748b",
                                             fontWeight: 500,
                                           }}
                                         >
-                                          Damage Fee:{" "}
-                                          {parseFloat(booking.damage_fee)} ETH
+                                          Waiting for lessor to set damage
+                                          fee...
                                         </span>
-                                        {booking.isDamage_paid ? (
-                                          <span
-                                            style={{
-                                              color: "#43a047",
-                                              fontWeight: 500,
-                                              marginLeft: 12,
-                                            }}
-                                          >
-                                            Damage fee paid successfully!
-                                          </span>
-                                        ) : (
-                                          <button
-                                            className={styles.payButton}
-                                            style={{
-                                              background: "#eab308",
-                                              marginLeft: 12,
-                                            }}
-                                            onClick={() =>
-                                              handlePayDamageFee(booking.id)
-                                            }
-                                          >
-                                            Pay Damage Fee
-                                          </button>
-                                        )}
-                                      </div>
-                                    ) : (
+                                      )
+                                    ) : booking.has_damage === false ? (
                                       <span
                                         style={{
                                           color: "#43a047",
                                           fontWeight: 500,
                                         }}
                                       >
-                                        No damage fee required.
+                                        No damage fee required
                                       </span>
-                                    )}
+                                    ) : null}
                                   </>
                                 )}
                               </div>
