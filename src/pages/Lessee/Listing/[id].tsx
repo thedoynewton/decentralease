@@ -32,7 +32,7 @@ export default function ListingDetail() {
   const [totalAmount, setTotalAmount] = useState(0);
   const [agreeToConditions, setAgreeToConditions] = useState(false);
   const [conditionsModalOpen, setConditionsModalOpen] = useState(false);
-  const PLATFORM_FEE = 0.05;
+  const PLATFORM_FEE = 0.0000045;
 
   useEffect(() => {
     if (!address) return;
@@ -130,6 +130,7 @@ export default function ListingDetail() {
   ]).select().single();
 
   if (error || !bookingData) {
+    console.error("Booking insert error:", error);
     alert("Failed to create booking.");
     return error || { message: "No booking data returned" };
   }
