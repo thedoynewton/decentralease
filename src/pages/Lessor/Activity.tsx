@@ -19,6 +19,12 @@ const STATUS_TABS = ["approved", "paid", "completed"];
 const CONTRACT_ADDRESS = process.env
   .NEXT_PUBLIC_DECENTRALEASE_CONTRACT_ADDRESS as `0x${string}`;
 
+function trimTo10Decimals(value: string): string {
+  if (!value.includes(".")) return value;
+  const [whole, decimals] = value.split(".");
+  return `${whole}.${decimals.slice(0, 10)}`;
+}
+
 export default function Activity() {
   const { address } = useAccount();
   const [bookings, setBookings] = useState<any[]>([]);
@@ -188,26 +194,33 @@ export default function Activity() {
 
   const handleSubmitDamageFee = async (
     bookingId: string,
-    fee: number,
+    fee: string,
     securityDeposit: number
   ) => {
-    const payableFee = fee - securityDeposit;
+    // Always trim the string fee first!
+    const trimmedFee = trimTo10Decimals(fee);
+    const feeNum = parseFloat(trimmedFee);
+    const payableFee = feeNum - securityDeposit;
     let message = "";
     let updateFields: any = {
-      input_damageFee: fee,
+      input_damageFee: trimmedFee,
     };
 
     if (payableFee > 0) {
       message = "Damage fee is greater than the security deposit.";
-      updateFields.damage_fee = Math.abs(payableFee);
+      updateFields.damage_fee = trimTo10Decimals(
+        Math.abs(payableFee).toString()
+      );
       updateFields.remaining_deposit = null;
     } else if (payableFee < 0) {
       message = "Damage fee is less than the security deposit.";
-      updateFields.damage_fee = null; // Set damage_fee to null
-      updateFields.remaining_deposit = Math.abs(payableFee);
+      updateFields.damage_fee = null;
+      updateFields.remaining_deposit = trimTo10Decimals(
+        Math.abs(payableFee).toString()
+      );
     } else {
       message = "Damage fee is equal to the security deposit.";
-      updateFields.damage_fee = null; // Set damage_fee to null
+      updateFields.damage_fee = null;
       updateFields.remaining_deposit = null;
     }
 
@@ -219,7 +232,13 @@ export default function Activity() {
     if (error) {
       alert("Failed to submit damage fee: " + error.message);
     } else {
-      alert(`${message} (Submitted: ${Math.abs(payableFee)})`);
+      alert(
+        `${message} (Submitted: ${
+          updateFields.damage_fee ||
+          updateFields.remaining_deposit ||
+          trimmedFee
+        })`
+      );
       fetchUserBookings();
     }
   };

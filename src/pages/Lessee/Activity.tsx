@@ -110,6 +110,7 @@ export default function Activity() {
         const iface = new Interface(DecentralEaseABI as any);
         let blockchainBookingId: string | null = null;
         let isRemainingDepositReleased = false;
+        let isDamageFeePaid = false;
 
         for (const log of txReceipt.logs) {
           try {
@@ -119,6 +120,9 @@ export default function Activity() {
             }
             if (parsed && parsed.name === "RemainingDepositReleased") {
               isRemainingDepositReleased = true;
+            }
+            if (parsed && parsed.name === "DamageFeePaid") {
+              isDamageFeePaid = true;
             }
           } catch (e) {}
         }
@@ -134,8 +138,8 @@ export default function Activity() {
             .then(() => fetchUserBookings());
         }
 
-        // If RemainingDepositReleased event is found, mark as completed
-        if (isRemainingDepositReleased) {
+        // If RemainingDepositReleased or DamageFeePaid event is found, mark as completed
+        if (isRemainingDepositReleased || isDamageFeePaid) {
           supabase
             .from("bookings")
             .update({ status: "completed" })
@@ -341,16 +345,66 @@ export default function Activity() {
   };
 
   const handlePayDamageFee = async (bookingId: string) => {
-    const { error } = await supabase
-      .from("bookings")
-      .update({ isDamage_paid: true, status: "completed" })
-      .eq("id", bookingId);
+    setTxError(null);
+    const booking = bookings.find((b) => b.id === bookingId);
+    if (!booking) {
+      alert("Booking not found.");
+      setTxError("Booking not found.");
+      return;
+    }
+    const blockchainBookingId = booking.blockchain_booking_id;
+    const damageFee = booking.damage_fee;
 
-    if (error) {
-      alert("Failed to pay damage fee: " + error.message);
-    } else {
-      alert("Damage fee paid! Booking completed.");
-      fetchUserBookings();
+    if (
+      blockchainBookingId === undefined ||
+      blockchainBookingId === null ||
+      !/^\d+$/.test(blockchainBookingId)
+    ) {
+      alert(
+        "Blockchain booking ID not found or invalid: " + blockchainBookingId
+      );
+      setTxError("Blockchain booking ID not found or invalid.");
+      return;
+    }
+    if (
+      damageFee === undefined ||
+      damageFee === null ||
+      isNaN(Number(damageFee))
+    ) {
+      alert("Damage fee not found or invalid: " + damageFee);
+      setTxError("Damage fee not found or invalid.");
+      return;
+    }
+
+    try {
+      // alert(
+      //   `Calling contract with bookingId: ${blockchainBookingId}, damageFee: ${damageFee}`
+      // );
+      writeContract(
+        {
+          address: CONTRACT_ADDRESS,
+          abi: DecentralEaseABI,
+          functionName: "payDamageFee",
+          args: [BigInt(blockchainBookingId), parseEther(damageFee)],
+          value: parseEther(damageFee),
+        },
+        {
+          onSuccess: (tx) => {
+            alert("Transaction sent: " + tx);
+            setPendingTx(tx);
+            setPayingBookingId(bookingId);
+          },
+          onError: (err) => {
+            alert(
+              "Contract call error: " + (err.message || "Contract call failed")
+            );
+            setTxError(err.message || "Contract call failed");
+          },
+        }
+      );
+    } catch (err: any) {
+      alert("Catch error: " + (err.message || "Contract call failed"));
+      setTxError(err.message || "Contract call failed");
     }
   };
 
@@ -596,8 +650,15 @@ export default function Activity() {
                                               onClick={() =>
                                                 handlePayDamageFee(booking.id)
                                               }
+                                              disabled={
+                                                !!pendingTx &&
+                                                payingBookingId === booking.id
+                                              }
                                             >
-                                              Pay Damage Fee
+                                              {pendingTx &&
+                                              payingBookingId === booking.id
+                                                ? "Processing..."
+                                                : "Pay Damage Fee"}
                                             </button>
                                           )}
                                         </div>
