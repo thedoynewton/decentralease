@@ -9,7 +9,8 @@ import DecentralEaseABI from "../../contract/DecentralEaseABI.json";
 import { parseEther, Interface } from "ethers";
 
 const STATUS_TABS = ["declined", "pending", "approved", "paid", "completed"];
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_DECENTRALEASE_CONTRACT_ADDRESS as `0x${string}`;
+const CONTRACT_ADDRESS = process.env
+  .NEXT_PUBLIC_DECENTRALEASE_CONTRACT_ADDRESS as `0x${string}`;
 const PLATFORM_FEE = "0.0000045"; // in ETH
 
 export default function Activity() {
@@ -108,19 +109,36 @@ export default function Activity() {
       try {
         const iface = new Interface(DecentralEaseABI as any);
         let blockchainBookingId: string | null = null;
+        let isRemainingDepositReleased = false;
+
         for (const log of txReceipt.logs) {
           try {
             const parsed = iface.parseLog(log);
             if (parsed && parsed.name === "Paid") {
               blockchainBookingId = parsed.args.bookingId.toString();
-              break;
+            }
+            if (parsed && parsed.name === "RemainingDepositReleased") {
+              isRemainingDepositReleased = true;
             }
           } catch (e) {}
         }
+
         if (blockchainBookingId) {
           supabase
             .from("bookings")
-            .update({ status: "paid", blockchain_booking_id: blockchainBookingId })
+            .update({
+              status: "paid",
+              blockchain_booking_id: blockchainBookingId,
+            })
+            .eq("id", payingBookingId)
+            .then(() => fetchUserBookings());
+        }
+
+        // If RemainingDepositReleased event is found, mark as completed
+        if (isRemainingDepositReleased) {
+          supabase
+            .from("bookings")
+            .update({ status: "completed" })
             .eq("id", payingBookingId)
             .then(() => fetchUserBookings());
         }
@@ -171,7 +189,9 @@ export default function Activity() {
       let rentalFee, securityDeposit, platformFee;
       try {
         rentalFee = parseEther(booking.total_amount?.toString() || "0");
-        securityDeposit = parseEther(booking.security_deposit?.toString() || "0");
+        securityDeposit = parseEther(
+          booking.security_deposit?.toString() || "0"
+        );
         platformFee = parseEther(PLATFORM_FEE);
       } catch (e) {
         alert("Invalid fee values.");
@@ -335,16 +355,55 @@ export default function Activity() {
   };
 
   const handleReleaseRemainingBalance = async (bookingId: string) => {
-    const { error } = await supabase
-      .from("bookings")
-      .update({ status: "completed" })
-      .eq("id", bookingId);
+    setTxError(null);
+    const booking = bookings.find((b) => b.id === bookingId);
+    if (!booking) {
+      setTxError("Booking not found.");
+      return;
+    }
+    const blockchainBookingId = booking.blockchain_booking_id;
+    const remainingDeposit = booking.remaining_deposit;
 
-    if (error) {
-      alert("Failed to release remaining deposit: " + error.message);
-    } else {
-      alert("Remaining deposit released! Booking completed.");
-      fetchUserBookings();
+    if (
+      blockchainBookingId === undefined ||
+      blockchainBookingId === null ||
+      !/^\d+$/.test(blockchainBookingId)
+    ) {
+      setTxError("Blockchain booking ID not found or invalid.");
+      return;
+    }
+    if (
+      remainingDeposit === undefined ||
+      remainingDeposit === null ||
+      isNaN(Number(remainingDeposit))
+    ) {
+      setTxError("Remaining deposit not found or invalid.");
+      return;
+    }
+
+    try {
+      writeContract(
+        {
+          address: CONTRACT_ADDRESS,
+          abi: DecentralEaseABI,
+          functionName: "releaseRemainingDeposit",
+          args: [
+            BigInt(blockchainBookingId),
+            parseEther(remainingDeposit.toString()),
+          ],
+        },
+        {
+          onSuccess: (tx) => {
+            setPendingTx(tx);
+            setPayingBookingId(bookingId);
+          },
+          onError: (err) => {
+            setTxError(err.message || "Contract call failed");
+          },
+        }
+      );
+    } catch (err: any) {
+      setTxError(err.message || "Contract call failed");
     }
   };
 
@@ -487,8 +546,15 @@ export default function Activity() {
                                                   booking.id
                                                 )
                                               }
+                                              disabled={
+                                                !!pendingTx &&
+                                                payingBookingId === booking.id
+                                              }
                                             >
-                                              Release Remaining Deposit
+                                              {pendingTx &&
+                                              payingBookingId === booking.id
+                                                ? "Processing..."
+                                                : "Release Remaining Deposit"}
                                             </button>
                                           )}
                                         </div>
