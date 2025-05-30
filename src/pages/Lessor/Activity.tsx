@@ -1,16 +1,29 @@
 // Activity.tsx
 import { useCallback, useEffect, useState } from "react";
 import styles from "../../styles/LesseeActivity.module.css";
-import { useAccount } from "wagmi";
+import {
+  useAccount,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+} from "wagmi";
 import { supabase } from "../../../supabase/supabase-client";
 import Layout from "../../../components/LessorLayout";
 import AcknowledgeModal from "../../../components/AcknowledgeModal";
 import ReleasePaymentButton from "../../../components/ReleasePaymentButton";
 import InputDamageFee from "../../../components/InputDamageFee";
+import DecentralEaseABI from "../../contract/DecentralEaseABI.json";
 // import CollectFundButton from "../../../components/CollectFundButton";
 // import CollectAllFundsButton from "../../../components/CollectAllFundsButton";
 
 const STATUS_TABS = ["approved", "paid", "completed"];
+const CONTRACT_ADDRESS = process.env
+  .NEXT_PUBLIC_DECENTRALEASE_CONTRACT_ADDRESS as `0x${string}`;
+
+function trimTo10Decimals(value: string): string {
+  if (!value.includes(".")) return value;
+  const [whole, decimals] = value.split(".");
+  return `${whole}.${decimals.slice(0, 10)}`;
+}
 
 export default function Activity() {
   const { address } = useAccount();
@@ -20,6 +33,17 @@ export default function Activity() {
 
   const [ackModalBooking, setAckModalBooking] = useState<any | null>(null);
   const [ackLoading, setAckLoading] = useState(false);
+
+  const [pendingTx, setPendingTx] = useState<string | null>(null);
+  const [releasingBookingId, setReleasingBookingId] = useState<string | null>(
+    null
+  );
+  const [txError, setTxError] = useState<string | null>(null);
+
+  const { writeContract } = useWriteContract();
+  const { data: txReceipt } = useWaitForTransactionReceipt({
+    hash: (pendingTx as `0x${string}`) ?? undefined,
+  });
 
   const fetchUserBookings = useCallback(async () => {
     if (!address) {
@@ -61,6 +85,7 @@ export default function Activity() {
         isDamage_paid,
         input_damageFee,
         remaining_deposit,
+        blockchain_booking_id,
         listing_id (
           title,
           image_url,
@@ -116,42 +141,86 @@ export default function Activity() {
     }
   };
 
-  const handleReleasePayment = async (bookingId: string) => {
-    const { error } = await supabase
-      .from("bookings")
-      .update({ status: "completed" })
-      .eq("id", bookingId);
+  useEffect(() => {
+    if (txReceipt && releasingBookingId) {
+      supabase
+        .from("bookings")
+        .update({ status: "completed" })
+        .eq("id", releasingBookingId)
+        .then(() => fetchUserBookings());
+      setPendingTx(null);
+      setReleasingBookingId(null);
+    }
+  }, [txReceipt, releasingBookingId, fetchUserBookings]);
 
-    if (error) {
-      alert("Failed to release payment: " + error.message);
-    } else {
-      alert("Payment released!");
-      fetchUserBookings();
+  const handleReleasePayment = async (bookingId: string) => {
+    setTxError(null);
+    const booking = bookings.find((b) => b.id === bookingId);
+    if (!booking) {
+      setTxError("Booking not found.");
+      return;
+    }
+    const blockchainBookingId = booking.blockchain_booking_id;
+    if (
+      blockchainBookingId === undefined ||
+      blockchainBookingId === null ||
+      !/^\d+$/.test(blockchainBookingId)
+    ) {
+      setTxError("Blockchain booking ID not found or invalid.");
+      return;
+    }
+    try {
+      writeContract(
+        {
+          address: CONTRACT_ADDRESS,
+          abi: DecentralEaseABI,
+          functionName: "releasePayment",
+          args: [BigInt(blockchainBookingId)],
+        },
+        {
+          onSuccess: (tx) => {
+            setPendingTx(tx);
+            setReleasingBookingId(bookingId);
+          },
+          onError: (err) => {
+            setTxError(err.message || "Contract call failed");
+          },
+        }
+      );
+    } catch (err: any) {
+      setTxError(err.message || "Contract call failed");
     }
   };
 
   const handleSubmitDamageFee = async (
     bookingId: string,
-    fee: number,
+    fee: string,
     securityDeposit: number
   ) => {
-    const payableFee = fee - securityDeposit;
+    // Always trim the string fee first!
+    const trimmedFee = trimTo10Decimals(fee);
+    const feeNum = parseFloat(trimmedFee);
+    const payableFee = feeNum - securityDeposit;
     let message = "";
     let updateFields: any = {
-      input_damageFee: fee,
+      input_damageFee: trimmedFee,
     };
 
     if (payableFee > 0) {
       message = "Damage fee is greater than the security deposit.";
-      updateFields.damage_fee = Math.abs(payableFee);
+      updateFields.damage_fee = trimTo10Decimals(
+        Math.abs(payableFee).toString()
+      );
       updateFields.remaining_deposit = null;
     } else if (payableFee < 0) {
       message = "Damage fee is less than the security deposit.";
-      updateFields.damage_fee = null; // Set damage_fee to null
-      updateFields.remaining_deposit = Math.abs(payableFee);
+      updateFields.damage_fee = null;
+      updateFields.remaining_deposit = trimTo10Decimals(
+        Math.abs(payableFee).toString()
+      );
     } else {
       message = "Damage fee is equal to the security deposit.";
-      updateFields.damage_fee = null; // Set damage_fee to null
+      updateFields.damage_fee = null;
       updateFields.remaining_deposit = null;
     }
 
@@ -163,35 +232,13 @@ export default function Activity() {
     if (error) {
       alert("Failed to submit damage fee: " + error.message);
     } else {
-      alert(`${message} (Submitted: ${Math.abs(payableFee)})`);
-      fetchUserBookings();
-    }
-  };
-
-  const handleCollectFund = async (bookingId: string) => {
-    const { error } = await supabase
-      .from("bookings")
-      .update({ status: "completed" })
-      .eq("id", bookingId);
-
-    if (error) {
-      alert("Failed to collect fund: " + error.message);
-    } else {
-      alert("Funds collected! Booking completed.");
-      fetchUserBookings();
-    }
-  };
-
-  const handleCollectAllFunds = async (bookingId: string) => {
-    const { error } = await supabase
-      .from("bookings")
-      .update({ status: "completed" })
-      .eq("id", bookingId);
-
-    if (error) {
-      alert("Failed to collect all funds: " + error.message);
-    } else {
-      alert("All funds collected! Booking completed.");
+      alert(
+        `${message} (Submitted: ${
+          updateFields.damage_fee ||
+          updateFields.remaining_deposit ||
+          trimmedFee
+        })`
+      );
       fetchUserBookings();
     }
   };

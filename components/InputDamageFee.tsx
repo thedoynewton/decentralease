@@ -1,9 +1,16 @@
 import React, { useState } from "react";
 
 interface InputDamageFeeProps {
-  onSubmit: (fee: number) => void;
+  onSubmit: (fee: string) => void;
   disabled?: boolean;
   securityDeposit: number;
+}
+
+// Helper to limit decimals to 10
+function limitDecimals(value: string, decimals = 10) {
+  if (!value.includes(".")) return value;
+  const [whole, dec] = value.split(".");
+  return `${whole}.${dec.slice(0, decimals)}`;
 }
 
 export default function InputDamageFee({
@@ -13,7 +20,16 @@ export default function InputDamageFee({
 }: InputDamageFeeProps) {
   const [fee, setFee] = useState("");
 
-  const parsedFee = Number(fee.replace(",", "."));
+  // Limit decimals on input
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(",", ".");
+    if (val.includes(".")) {
+      val = limitDecimals(val, 10);
+    }
+    setFee(val);
+  };
+
+  const parsedFee = Number(fee);
   const isValid = !isNaN(parsedFee) && parsedFee >= 0;
   const difference = isValid ? parsedFee - securityDeposit : null;
 
@@ -21,11 +37,14 @@ export default function InputDamageFee({
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (!isValid) {
+        // Always trim to 10 decimals before submitting
+        const trimmedFee = limitDecimals(fee, 10);
+        const parsedFee = Number(trimmedFee);
+        if (isNaN(parsedFee) || parsedFee < 0) {
           alert("Please enter a valid value (e.g. 0.01)");
           return;
         }
-        onSubmit(parsedFee);
+        onSubmit(trimmedFee);
         setFee("");
       }}
       style={{
@@ -43,7 +62,7 @@ export default function InputDamageFee({
           step="any"
           placeholder="Enter damage fee"
           value={fee}
-          onChange={(e) => setFee(e.target.value)}
+          onChange={handleChange}
           disabled={disabled}
           style={{
             padding: "8px",
@@ -76,7 +95,7 @@ export default function InputDamageFee({
         {isValid && difference !== null
           ? `Calculated payable/remaining fee: ${
               difference > 0 ? "+" : ""
-            }${difference.toFixed(10)} ETH`
+            }${difference.toFixed(8)} ETH`
           : "Enter a valid fee to see the difference"}
       </span>
     </form>

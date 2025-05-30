@@ -1,12 +1,17 @@
-// Activity.tsx
 import { useCallback, useEffect, useRef, useState } from "react";
 import Layout from "../../../components/LesseeLayout";
 import styles from "../../styles/LesseeActivity.module.css";
 import { useAccount } from "wagmi";
 import { supabase } from "../../../supabase/supabase-client";
 import ConfirmReturnModal from "../../../components/ConfirmReturnModal";
+import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import DecentralEaseABI from "../../contract/DecentralEaseABI.json";
+import { parseEther, Interface } from "ethers";
 
 const STATUS_TABS = ["declined", "pending", "approved", "paid", "completed"];
+const CONTRACT_ADDRESS = process.env
+  .NEXT_PUBLIC_DECENTRALEASE_CONTRACT_ADDRESS as `0x${string}`;
+const PLATFORM_FEE = "0.0000045"; // in ETH
 
 export default function Activity() {
   const { address } = useAccount();
@@ -19,6 +24,17 @@ export default function Activity() {
   const [modalBooking, setModalBooking] = useState<any | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
 
+  // For blockchain payment
+  const [pendingTx, setPendingTx] = useState<string | null>(null);
+  const [payingBookingId, setPayingBookingId] = useState<string | null>(null);
+  const [txError, setTxError] = useState<string | null>(null);
+
+  const { writeContract } = useWriteContract();
+  const { data: txReceipt } = useWaitForTransactionReceipt({
+    hash: (pendingTx as `0x${string}`) ?? undefined,
+  });
+
+  // Fetch bookings
   const fetchUserBookings = useCallback(async () => {
     if (!address) {
       setBookings([]);
@@ -58,10 +74,14 @@ export default function Activity() {
           isDamage_paid,
           input_damageFee,
           remaining_deposit,
+          blockchain_booking_id,
           listing_id (
             title,
             image_url,
-            user_id
+            user_id,
+            users (
+              wallet_address
+            )
           )
         `
         )
@@ -82,6 +102,57 @@ export default function Activity() {
   useEffect(() => {
     fetchUserBookings();
   }, [fetchUserBookings]);
+
+  // Listen for tx receipt and update booking with blockchain_booking_id
+  useEffect(() => {
+    if (txReceipt && payingBookingId) {
+      try {
+        const iface = new Interface(DecentralEaseABI as any);
+        let blockchainBookingId: string | null = null;
+        let isRemainingDepositReleased = false;
+        let isDamageFeePaid = false;
+
+        for (const log of txReceipt.logs) {
+          try {
+            const parsed = iface.parseLog(log);
+            if (parsed && parsed.name === "Paid") {
+              blockchainBookingId = parsed.args.bookingId.toString();
+            }
+            if (parsed && parsed.name === "RemainingDepositReleased") {
+              isRemainingDepositReleased = true;
+            }
+            if (parsed && parsed.name === "DamageFeePaid") {
+              isDamageFeePaid = true;
+            }
+          } catch (e) {}
+        }
+
+        if (blockchainBookingId) {
+          supabase
+            .from("bookings")
+            .update({
+              status: "paid",
+              blockchain_booking_id: blockchainBookingId,
+            })
+            .eq("id", payingBookingId)
+            .then(() => fetchUserBookings());
+        }
+
+        // If RemainingDepositReleased or DamageFeePaid event is found, mark as completed
+        if (isRemainingDepositReleased || isDamageFeePaid) {
+          supabase
+            .from("bookings")
+            .update({ status: "completed" })
+            .eq("id", payingBookingId)
+            .then(() => fetchUserBookings());
+        }
+      } catch (e) {
+        setTxError("Failed to parse blockchain booking ID.");
+      }
+      setPendingTx(null);
+      setPayingBookingId(null);
+    }
+  }, [txReceipt, payingBookingId, fetchUserBookings]);
 
   const handleCancelBooking = useCallback(
     async (bookingId: string) => {
@@ -106,23 +177,58 @@ export default function Activity() {
     [fetchUserBookings]
   );
 
-  // Pay Now handler for approved bookings
+  // Pay Now handler for approved bookings (calls smart contract and updates blockchain_booking_id)
   const handlePayNow = useCallback(
     async (bookingId: string) => {
-      alert("Payment done");
-      // Update status to 'paid'
-      const { error } = await supabase
-        .from("bookings")
-        .update({ status: "paid" })
-        .eq("id", bookingId);
+      const booking = bookings.find((b) => b.id === bookingId);
+      if (!booking) return;
 
-      if (error) {
-        alert(`Failed to update payment status: ${error.message}`);
-      } else {
-        fetchUserBookings();
+      const lessor = booking.listing_id?.users?.wallet_address;
+      if (!lessor) {
+        alert("Lessor wallet address not found.");
+        return;
+      }
+
+      // Use parseEther for all string values
+      let rentalFee, securityDeposit, platformFee;
+      try {
+        rentalFee = parseEther(booking.total_amount?.toString() || "0");
+        securityDeposit = parseEther(
+          booking.security_deposit?.toString() || "0"
+        );
+        platformFee = parseEther(PLATFORM_FEE);
+      } catch (e) {
+        alert("Invalid fee values.");
+        return;
+      }
+      const value = rentalFee + securityDeposit + platformFee;
+
+      setTxError(null);
+
+      try {
+        writeContract(
+          {
+            address: CONTRACT_ADDRESS,
+            abi: DecentralEaseABI,
+            functionName: "pay",
+            args: [lessor, rentalFee, securityDeposit],
+            value,
+          },
+          {
+            onSuccess: (tx) => {
+              setPendingTx(tx);
+              setPayingBookingId(bookingId);
+            },
+            onError: (err) => {
+              setTxError(err.message || "Contract call failed");
+            },
+          }
+        );
+      } catch (err: any) {
+        setTxError(err.message || "Contract call failed");
       }
     },
-    [fetchUserBookings]
+    [bookings, writeContract]
   );
 
   // When opening the modal, pass confirmation count and has_damage
@@ -197,8 +303,6 @@ export default function Activity() {
     if (!file) return;
     setUploadingId(bookingId);
 
-    // Optional: You may want to fetch a transactionId for this booking
-    // For demo, let's use booking.id as part of the file path
     const fileExt = file.name.split(".").pop();
     const filePath = `booking_${bookingId}_${Date.now()}.${fileExt}`;
 
@@ -241,30 +345,119 @@ export default function Activity() {
   };
 
   const handlePayDamageFee = async (bookingId: string) => {
-    const { error } = await supabase
-      .from("bookings")
-      .update({ isDamage_paid: true, status: "completed" }) // update status here
-      .eq("id", bookingId);
+    setTxError(null);
+    const booking = bookings.find((b) => b.id === bookingId);
+    if (!booking) {
+      alert("Booking not found.");
+      setTxError("Booking not found.");
+      return;
+    }
+    const blockchainBookingId = booking.blockchain_booking_id;
+    const damageFee = booking.damage_fee;
 
-    if (error) {
-      alert("Failed to pay damage fee: " + error.message);
-    } else {
-      alert("Damage fee paid! Booking completed.");
-      fetchUserBookings();
+    if (
+      blockchainBookingId === undefined ||
+      blockchainBookingId === null ||
+      !/^\d+$/.test(blockchainBookingId)
+    ) {
+      alert(
+        "Blockchain booking ID not found or invalid: " + blockchainBookingId
+      );
+      setTxError("Blockchain booking ID not found or invalid.");
+      return;
+    }
+    if (
+      damageFee === undefined ||
+      damageFee === null ||
+      isNaN(Number(damageFee))
+    ) {
+      alert("Damage fee not found or invalid: " + damageFee);
+      setTxError("Damage fee not found or invalid.");
+      return;
+    }
+
+    try {
+      // alert(
+      //   `Calling contract with bookingId: ${blockchainBookingId}, damageFee: ${damageFee}`
+      // );
+      writeContract(
+        {
+          address: CONTRACT_ADDRESS,
+          abi: DecentralEaseABI,
+          functionName: "payDamageFee",
+          args: [BigInt(blockchainBookingId), parseEther(damageFee)],
+          value: parseEther(damageFee),
+        },
+        {
+          onSuccess: (tx) => {
+            alert("Transaction sent: " + tx);
+            setPendingTx(tx);
+            setPayingBookingId(bookingId);
+          },
+          onError: (err) => {
+            alert(
+              "Contract call error: " + (err.message || "Contract call failed")
+            );
+            setTxError(err.message || "Contract call failed");
+          },
+        }
+      );
+    } catch (err: any) {
+      alert("Catch error: " + (err.message || "Contract call failed"));
+      setTxError(err.message || "Contract call failed");
     }
   };
 
   const handleReleaseRemainingBalance = async (bookingId: string) => {
-    const { error } = await supabase
-      .from("bookings")
-      .update({ status: "completed" })
-      .eq("id", bookingId);
+    setTxError(null);
+    const booking = bookings.find((b) => b.id === bookingId);
+    if (!booking) {
+      setTxError("Booking not found.");
+      return;
+    }
+    const blockchainBookingId = booking.blockchain_booking_id;
+    const remainingDeposit = booking.remaining_deposit;
 
-    if (error) {
-      alert("Failed to release remaining deposit: " + error.message);
-    } else {
-      alert("Remaining deposit released! Booking completed.");
-      fetchUserBookings();
+    if (
+      blockchainBookingId === undefined ||
+      blockchainBookingId === null ||
+      !/^\d+$/.test(blockchainBookingId)
+    ) {
+      setTxError("Blockchain booking ID not found or invalid.");
+      return;
+    }
+    if (
+      remainingDeposit === undefined ||
+      remainingDeposit === null ||
+      isNaN(Number(remainingDeposit))
+    ) {
+      setTxError("Remaining deposit not found or invalid.");
+      return;
+    }
+
+    try {
+      writeContract(
+        {
+          address: CONTRACT_ADDRESS,
+          abi: DecentralEaseABI,
+          functionName: "releaseRemainingDeposit",
+          args: [
+            BigInt(blockchainBookingId),
+            parseEther(remainingDeposit.toString()),
+          ],
+        },
+        {
+          onSuccess: (tx) => {
+            setPendingTx(tx);
+            setPayingBookingId(bookingId);
+          },
+          onError: (err) => {
+            setTxError(err.message || "Contract call failed");
+          },
+        }
+      );
+    } catch (err: any) {
+      setTxError(err.message || "Contract call failed");
     }
   };
 
@@ -324,10 +517,15 @@ export default function Activity() {
                     <button
                       onClick={() => handlePayNow(booking.id)}
                       className={styles.payButton}
-                      disabled={loading}
+                      disabled={loading || !!pendingTx}
                     >
-                      Pay Now
+                      {pendingTx && payingBookingId === booking.id
+                        ? "Processing..."
+                        : "Pay Now"}
                     </button>
+                  )}
+                  {txError && payingBookingId === booking.id && (
+                    <div className={styles.error}>{txError}</div>
                   )}
                   {activeTab === "paid" && (
                     <>
@@ -402,8 +600,15 @@ export default function Activity() {
                                                   booking.id
                                                 )
                                               }
+                                              disabled={
+                                                !!pendingTx &&
+                                                payingBookingId === booking.id
+                                              }
                                             >
-                                              Release Remaining Deposit
+                                              {pendingTx &&
+                                              payingBookingId === booking.id
+                                                ? "Processing..."
+                                                : "Release Remaining Deposit"}
                                             </button>
                                           )}
                                         </div>
@@ -445,8 +650,15 @@ export default function Activity() {
                                               onClick={() =>
                                                 handlePayDamageFee(booking.id)
                                               }
+                                              disabled={
+                                                !!pendingTx &&
+                                                payingBookingId === booking.id
+                                              }
                                             >
-                                              Pay Damage Fee
+                                              {pendingTx &&
+                                              payingBookingId === booking.id
+                                                ? "Processing..."
+                                                : "Pay Damage Fee"}
                                             </button>
                                           )}
                                         </div>
