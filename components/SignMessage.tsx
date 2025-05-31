@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAccount, useSignMessage } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import styles from "../src/styles/SignMessage.module.css";
 import { supabase } from "../supabase/supabase-client";
 import { useRouter } from "next/router";
@@ -65,14 +66,11 @@ export function SignMessage() {
 
   return (
     <div className={styles.container}>
+     
+      <div className={styles.connectButtonContainer}>
+        <ConnectButton />
+      </div>
       <div className={styles.inputRow}>
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Message to sign"
-          className={styles.input}
-        />
         <button
           onClick={() => signMessage({ message })}
           disabled={isPending}
@@ -83,13 +81,7 @@ export function SignMessage() {
       </div>
       {isSuccess && (
         <div className={styles.signature}>
-          <strong>Signature:</strong>
-          <div>{data}</div>
-        </div>
-      )}
-      {authStatus && (
-        <div className={styles.signature}>
-          <strong>{authStatus}</strong>
+          <strong>Loading...</strong>
         </div>
       )}
       {error && <div className={styles.error}>Error: {error.message}</div>}

@@ -5,12 +5,22 @@ import styles from "../styles/Home.module.css";
 import { SignMessage } from "../../components/SignMessage";
 import { useAccount } from "wagmi";
 import { useRouter } from "next/router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../../supabase/supabase-client";
 
 const Home: NextPage = () => {
   const { address } = useAccount();
   const router = useRouter();
+  const [showSplash, setShowSplash] = useState(true);
+
+  // Hide splash screen after 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -56,20 +66,48 @@ const Home: NextPage = () => {
         />
       </Head>
 
-      <main className={styles.main}>
-        <ConnectButton />
-        {address && <SignMessage />}
-        <h1 className={styles.title}>
-          Welcome to{" "}
-          <a href="https://decentralease.vercel.app/">Decentralease</a>
-        </h1>
-      </main>
+      {showSplash ? (
+        /* Splash Screen */
+        <div className={styles.splashScreen}>
+          <div className={styles.splashContent}>
+            <img 
+              src="/icons/Logo.png" 
+              alt="Decentralease Logo" 
+              className={styles.splashLogo}
+            />
+            <img 
+              src="/icons/Decentralease.png" 
+              alt="Decentralease" 
+              className={styles.splashBrandName}
+            />
+            <div className={styles.loadingSpinner}></div>
+            <p className={styles.loadingText}>Loading...</p>
+          </div>
+        </div>
+      ) : (
+        /* Main Content */
+        <main className={styles.main}>
+          {/* Logo and Brand Name */}
+          <div className={styles.brandContainer}>
+            <img 
+              src="/icons/Logo.png" 
+              alt="Decentralease Logo" 
+              className={styles.logo}
+            />
+            <img 
+              src="/icons/Decentralease.png" 
+              alt="Decentralease" 
+              className={styles.brandName}
+            />
+          </div>
+          
+          {!address && <ConnectButton />}
+          {address && <SignMessage />}
+         
+        </main>
+      )}
 
-      <footer className={styles.footer}>
-        <a href="https://rainbow.me" rel="noopener noreferrer" target="_blank">
-          Made with ❤️ by your frens at 🌈
-        </a>
-      </footer>
+     
     </div>
   );
 };
